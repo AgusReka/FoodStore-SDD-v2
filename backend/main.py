@@ -1,4 +1,10 @@
 """FastAPI application entry point."""
+import sys
+from pathlib import Path
+
+# Add project root to path so 'backend' package can be found
+# This file is in backend/, so parent is the project root
+sys.path.append(str(Path(__file__).parent.parent))
 
 from contextlib import asynccontextmanager
 

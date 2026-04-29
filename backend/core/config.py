@@ -13,9 +13,9 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-# Database
+    # Database
     DATABASE_URL: str = Field(
-        default="sqlite+aiosqlite:///./dev.db",
+        default="postgresql+asyncpg://postgres:root@localhost:5432/foodstore_db",
         description="Database connection URL (PostgreSQL) - Override with real DB for production",
     )
 
