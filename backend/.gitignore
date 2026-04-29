@@ -1,0 +1,29 @@
+# Python specifics
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.mypy_cache/
+*.log
+*.db
+*.sqlite3
+
+# Alembic
+db/alembic/versions/*.pyc
+
+# Environment
+.env
+.env.local
+
+# Cache
+.mypy_cache/
+.ruff_cache/
