@@ -14,8 +14,27 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.v1.health import router as health_router
 from backend.core.config import settings
 from backend.core.database import engine
+
+# Module routers
+import backend.modules.auth
+import backend.modules.usuarios
+import backend.modules.productos
+import backend.modules.categorias
+import backend.modules.pedidos
+import backend.modules.pagos
+import backend.modules.direcciones
+import backend.modules.admin
+from backend.core.error_handler import global_exception_handler
 from backend.core.logging import get_logger
 from backend.core.middleware import RequestIDMiddleware
+# Import all models so they're registered with Base.metadata
+import backend.modules.usuarios.model  # noqa: F401
+import backend.modules.refreshtokens.model  # noqa: F401
+import backend.modules.categorias.model  # noqa: F401
+import backend.modules.productos.model  # noqa: F401
+import backend.modules.direcciones.model  # noqa: F401
+import backend.modules.pedidos.model  # noqa: F401
+import backend.modules.pagos.model  # noqa: F401
 from backend.core.models import Base
 
 logger = get_logger(__name__)
@@ -29,11 +48,9 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Food Store API")
 
-    # Create tables on startup (for development)
+    # Tables are managed via Alembic migrations
     if settings.ENVIRONMENT == "development":
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables created")
+        logger.info("Development mode: use 'alembic upgrade head' to apply migrations")
 
     yield
 
@@ -64,8 +81,19 @@ app.add_middleware(
 # Add custom middleware
 app.add_middleware(RequestIDMiddleware)
 
+# Register global exception handlers
+app.add_exception_handler(Exception, global_exception_handler)
+
 # Include routers
 app.include_router(health_router, prefix="/api/v1")
+app.include_router(backend.modules.auth.router, prefix="/api/v1/auth")
+app.include_router(backend.modules.usuarios.router, prefix="/api/v1/usuarios")
+app.include_router(backend.modules.productos.router, prefix="/api/v1/productos")
+app.include_router(backend.modules.categorias.router, prefix="/api/v1/categorias")
+app.include_router(backend.modules.pedidos.router, prefix="/api/v1/pedidos")
+app.include_router(backend.modules.pagos.router, prefix="/api/v1/pagos")
+app.include_router(backend.modules.direcciones.router, prefix="/api/v1/direcciones")
+app.include_router(backend.modules.admin.router, prefix="/api/v1/admin")
 
 
 @app.get("/")

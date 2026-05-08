@@ -71,7 +71,7 @@ FoodStore-SDD/
 │   └── config.yaml     # Configuración de OPSX
 │
 ├── docs/                # Documentación
-├── .agents/             # Skills de agentes (global)
+├── .agents/             # Skills de agentes (locales)
 ├── .claude/             # Configuración de Claude (skills y comandos)
 └── skills-lock.json    # Lockfile de skills instaladas
 ```
@@ -89,32 +89,42 @@ Este proyecto utiliza **OPSX** — un workflow fluido y CLI-driven para especifi
 | `/opsx:apply [change-name]` | Implementar tareas del cambio |
 | `/opsx:archive [change-name]` | Archivar el cambio completado |
 
-### Skills de OPSX Instaladas
 
-Las siguientes skills están configuradas en `.claude/skills/`:
+### Skills Instaladas Localmente
 
-| Skill | Propósito | Trigger |
-|-------|-----------|---------|
-| **openspec-propose** | Crear propuesta con todos los artefactos | "propose", "create a change", "new feature" |
-| **openspec-apply-change** | Implementar tareas de un cambio | "implement", "apply", "write code", "do the tasks" |
-| **openspec-archive-change** | Archivar cambio completado | "archive", "close", "done with" |
-| **openspec-explore** | Modo exploración y pensamiento | "explore", "think about", "investigate" |
-| **find-skills** | Descubrir e instalar nuevas skills | "how do I do X", "find a skill for X" |
+Estas skills están instaladas localmente en `.agents/skills/` y disponibles para todo el proyecto:
 
-### Skills Adicionales Disponibles (Globales)
+| Skill | Propósito | Trigger / Cuándo usarla | Ruta Local |
+|-------|-----------|-------------------------|------------|
+| **fastapi-python** | Desarrollo con FastAPI | Al crear/editar endpoints, modelos, schemas o servicios en backend/ | `.agents/skills/fastapi-python/` |
+| **react-dev** | Desarrollo con React + TypeScript | Al crear componentes React, hooks, o páginas en frontend/ | `.agents/skills/react-dev/` |
+| **jwt-security** | Implementación de JWT | Al trabajar con autenticación, tokens, login/registro | `.agents/skills/jwt-security/` |
+| **postgresql-database-engineering** | Ingeniería de PostgreSQL | Al crear migraciones, índices, consultas complejas, o modelar DB | `.agents/skills/postgresql-database-engineering/` |
+| **tailwindcss** | Estilos con TailwindCSS | Al diseñar componentes UI, layouts, o estilos responsivos | `.agents/skills/tailwindcss/` |
+| **tailwind-design-system** | Sistemas de diseño con Tailwind v4 | Al crear design tokens, themes, dark mode, o componentes reutilizables | `.agents/skills/tailwind-design-system/` |
+| **zustand-state-management** | Manejo de estado con Zustand | Al crear/editar stores globales, estado de auth/carrito/etc. | `.agents/skills/zustand-state-management/` |
+| **dashboard-crud-page** | Páginas CRUD estandarizadas | Al crear páginas de listado/creación/edición/borrado de recursos | `.agents/skills/dashboard-crud-page/` |
+| **judgment-day** | Revisión adversarial paralela | Al decir "judgment day", "revisión", "que lo juzguen", "doble review" | `.agents/skills/judgment-day/` |
+| **skill-creator** | Crear nuevas skills | Al querer documentar patrones o crear nuevas instrucciones para el agente | `.agents/skills/skill-creator/` |
+| **find-skills** | Descubrir e instalar skills del ecosistema | Al preguntar "cómo hago X", "hay una skill para X", o querer extender capacidades | `.agents/skills/find-skills/` |
 
-Estas skills están disponibles en el sistema pero no necesariamente instaladas en el proyecto:
+Para cargar una skill durante una tarea, usá el comando `/skill` seguido del nombre de la skill.
 
-| Skill | Propósito |
-|-------|-----------|
-| **fastapi-python** | Desarrollo con FastAPI |
-| **react-dev** | Desarrollo con React + TypeScript |
-| **jwt-security** | Implementación de JWT |
-| **postgresql-database-engineering** | Ingeniería de PostgreSQL |
-| **tailwindcss** | Estilos con TailwindCSS |
-| **zustand-state-management** | Manejo de estado con Zustand |
-| **judgment-day** | Revisión adversarial paralela |
-| **skill-creator** | Crear nuevas skills |
+### Skills Globales Disponibles
+
+Estas skills están instaladas globalmente en `~/.claude/skills/` y también pueden cargarse con `/skill`:
+
+| Skill | Propósito | Trigger / Cuándo usarla |
+|-------|-----------|-------------------------|
+| **openspec-init** | Inicializar OPSX en un proyecto | Al decir "opsx init", "iniciar opsx", o arrancar un nuevo proyecto |
+| **openspec-design** | Crear documento de diseño técnico | Durante `/opsx:propose` para generar design.md |
+| **openspec-spec** | Escribir especificaciones | Durante `/opsx:propose` para generar specs delta |
+| **openspec-tasks** | Crear checklist de tareas | Durante `/opsx:propose` para generar tasks.md |
+| **openspec-onboard** | Walkthrough guiado de OPSX | Al querer aprender OPSX o hacer un primer cambio guiado |
+| **openspec-verify** | Validar implementación vs specs | Al querer verificar que un cambio cumple con lo especificado |
+| **branch-pr** | Crear Pull Requests | Al crear un PR, preparar cambios para review |
+| **issue-creation** | Crear GitHub Issues | Al reportar un bug o solicitar una feature |
+| **go-testing** | Testing en Go | Al escribir tests en Go, usar teatest, o agregar cobertura |
 
 ## Flujo de Trabajo OPSX
 

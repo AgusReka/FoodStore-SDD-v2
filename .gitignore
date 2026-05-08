@@ -2,7 +2,7 @@
 .env
 .env.local
 .env.*.local
-
+.agents
 # Python
 __pycache__/
 *.py[cod]
@@ -63,5 +63,3 @@ htmlcov/
 # OpenSpec (keep in repo, not ignored)
 # openspec/
 
-# Skills lock
-skills-lock.json

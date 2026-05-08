@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "skills": {
+    "fastapi-python": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "29c6ca5e2bbfb51d40f0fb0afd998b13e23234e1f88c790b6e6a435c7eac55de"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "computedHash": "9e1c8b3103f92fa8092568a44fe64858de7c5c9dc65ce4bea8f168080e889cfd"
+    },
+    "judgment-day": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "a5f4e0424f6a34e69f60158076bf085315c164358da85a72d338c6b9571ea5d1"
+    },
+    "jwt-security": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "90222fc948f988ac696e0a2ef365822e7bd17ccbfd141ec77189933bdbbefa2f"
+    },
+    "postgresql-database-engineering": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "1679dbc9daeada77006d061832dd8957a4597dc4a43766f605e15ab8f94b4d3d"
+    },
+    "react-dev": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "6906012fe308a0ed1976761d7d80c9604eb0f0273ccdcfcbe66096d91d00f52e"
+    },
+    "skill-creator": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "5014eff166fc16d9c827a08b23b0cd872f39b698f69de32ffce39cf93a3398af"
+    },
+    "tailwindcss": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "01a9f60585dbe67a65a53b5493a8de5b23f06c1e35ec17cc458b9ac2ce779db4"
+    },
+    "zustand-state-management": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "8a644c0d3ab4650c7011deb2b2cc3323ae4bd62d1f2d281b4e206bf36f9d90c7"
+    }
+  }
+}
