@@ -6,7 +6,6 @@ from sqlalchemy.orm import selectinload
 
 from backend.core.repository import BaseRepository
 from backend.modules.categorias.model import Category
-from backend.modules.productos.model import Product
 
 
 class CategoriaRepository(BaseRepository[Category]):
@@ -23,6 +22,7 @@ class CategoriaRepository(BaseRepository[Category]):
         return result.scalars().first()
 
     async def has_products(self, category_id: UUID) -> bool:
+        from backend.modules.productos.model import Product
         stmt = select(func.count()).select_from(Product).where(Product.category_id == category_id)
         result = await self.session.execute(stmt)
         return result.scalar_one() > 0

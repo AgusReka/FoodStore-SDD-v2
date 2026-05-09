@@ -1,6 +1,9 @@
 """Security utilities: password hashing and JWT tokens."""
 
+import hmac
+import secrets
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 from typing import Any
 
 from jose import JWTError, jwt
@@ -10,6 +13,28 @@ from backend.core.config import settings
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def generate_safe_token(num_bytes: int = 48) -> str:
+    """Generate a cryptographically secure, URL-safe token.
+
+    48 bytes = 384 bits of entropy = 64 URL-safe characters.
+    Significantly more secure than UUID4 (122 bits of entropy).
+    """
+    return secrets.token_urlsafe(num_bytes)
+
+
+def hash_token_deterministic(token: str) -> str:
+    """Hash a token deterministically using HMAC-SHA256.
+
+    Unlike bcrypt (which uses random salt), this produces the SAME output
+    for the SAME input every time. This allows DB lookups by hash.
+
+    Uses settings.SECRET_KEY as the HMAC key.
+    """
+    key_bytes = settings.SECRET_KEY.encode("utf-8")
+    token_bytes = token.encode("utf-8")
+    return hmac.new(key_bytes, token_bytes, sha256).hexdigest()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useAuthStore } from '../stores/authStore'
-import { get, post } from '../api/client'
+import { get, post, put } from '../api/client'
 import { ENDPOINTS } from '../api/endpoints'
 
 interface UserRead {
@@ -26,6 +26,30 @@ interface RegisterData {
   first_name: string
   last_name: string
   phone?: string
+}
+
+interface ForgotPasswordData {
+  email: string
+}
+
+interface ResetPasswordData {
+  token: string
+  new_password: string
+  confirm_password: string
+}
+
+interface SendVerificationData {
+  email: string
+}
+
+interface VerifyEmailData {
+  token: string
+}
+
+interface ChangePasswordData {
+  current_password: string
+  new_password: string
+  confirm_password: string
 }
 
 export function useAuth() {
@@ -66,6 +90,41 @@ export function useAuth() {
     },
   })
 
+  const forgotPasswordMutation = useMutation<{ message: string }, Error, ForgotPasswordData>({
+    mutationFn: async (data) => {
+      const response = await post<{ message: string }>(ENDPOINTS.AUTH_FORGOT_PASSWORD, data)
+      return response.data
+    },
+  })
+
+  const resetPasswordMutation = useMutation<{ message: string }, Error, ResetPasswordData>({
+    mutationFn: async (data) => {
+      const response = await post<{ message: string }>(ENDPOINTS.AUTH_RESET_PASSWORD, data)
+      return response.data
+    },
+  })
+
+  const sendVerificationMutation = useMutation<{ message: string }, Error, SendVerificationData>({
+    mutationFn: async (data) => {
+      const response = await post<{ message: string }>(ENDPOINTS.AUTH_SEND_VERIFICATION, data)
+      return response.data
+    },
+  })
+
+  const verifyEmailMutation = useMutation<{ message: string }, Error, VerifyEmailData>({
+    mutationFn: async (data) => {
+      const response = await post<{ message: string }>(ENDPOINTS.AUTH_VERIFY_EMAIL, data)
+      return response.data
+    },
+  })
+
+  const changePasswordMutation = useMutation<{ message: string }, Error, ChangePasswordData>({
+    mutationFn: async (data) => {
+      const response = await put<{ message: string }>(ENDPOINTS.AUTH_CHANGE_PASSWORD, data)
+      return response.data
+    },
+  })
+
   return {
     user: storeUser,
     isAuthenticated,
@@ -76,5 +135,24 @@ export function useAuth() {
     refreshProfile,
     isRegistering: registerMutation.isPending,
     registerError: registerMutation.error,
+    forgotPassword: forgotPasswordMutation.mutateAsync,
+    isSendingReset: forgotPasswordMutation.isPending,
+    forgotPasswordError: forgotPasswordMutation.error,
+    forgotPasswordData: forgotPasswordMutation.data,
+    resetPassword: resetPasswordMutation.mutateAsync,
+    isResetting: resetPasswordMutation.isPending,
+    resetPasswordError: resetPasswordMutation.error,
+    resetPasswordData: resetPasswordMutation.data,
+    sendVerification: sendVerificationMutation.mutateAsync,
+    isSendingVerification: sendVerificationMutation.isPending,
+    sendVerificationData: sendVerificationMutation.data,
+    verifyEmail: verifyEmailMutation.mutateAsync,
+    isVerifying: verifyEmailMutation.isPending,
+    verifyEmailError: verifyEmailMutation.error,
+    verifyEmailData: verifyEmailMutation.data,
+    changePassword: changePasswordMutation.mutateAsync,
+    isChangingPassword: changePasswordMutation.isPending,
+    changePasswordError: changePasswordMutation.error,
+    changePasswordData: changePasswordMutation.data,
   }
 }

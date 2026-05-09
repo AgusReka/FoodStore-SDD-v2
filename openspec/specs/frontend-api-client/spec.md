@@ -2,9 +2,7 @@
 
 ## Purpose
 API client layer for the FoodStore frontend — Axios instance, interceptors, endpoint constants, and typed helpers.
-
 ## Requirements
-
 ### Requirement: Axios instance configured with base URL
 
 The frontend SHALL have a configured Axios instance with base URL from environment variables.
@@ -77,3 +75,25 @@ The `shared/api/index.ts` file SHALL re-export all API modules.
 #### Scenario: All API modules exported
 - **WHEN** a file imports from `@shared/api` or `shared/api`
 - **THEN** `apiClient`, `endpoints`, `queryKeys`, and typed client helpers SHALL be available
+
+### Requirement: Auth endpoint constants for password reset
+
+The frontend SHALL define endpoint constants for password reset and email verification flows.
+
+#### Scenario: Password reset endpoint constants available
+- **WHEN** a developer imports from `shared/api/endpoints`
+- **THEN** the following endpoint constants SHALL be available:
+  - `AUTH_FORGOT_PASSWORD` resolving to `/auth/forgot-password`
+  - `AUTH_RESET_PASSWORD` resolving to `/auth/reset-password`
+
+#### Scenario: Email verification endpoint constants available
+- **WHEN** a developer imports from `shared/api/endpoints`
+- **THEN** the following endpoint constants SHALL be available:
+  - `AUTH_SEND_VERIFICATION` resolving to `/auth/send-verification`
+  - `AUTH_VERIFY_EMAIL` resolving to `/auth/verify-email`
+
+#### Scenario: Change password endpoint constant available
+- **WHEN** a developer imports from `shared/api/endpoints`
+- **THEN** the following endpoint constant SHALL be available:
+  - `AUTH_CHANGE_PASSWORD` resolving to `/auth/change-password`
+

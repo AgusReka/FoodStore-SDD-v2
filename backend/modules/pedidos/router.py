@@ -2,9 +2,10 @@ from uuid import UUID
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.core.auth import get_current_user
+from backend.core.auth import get_current_user, require_permission
 from backend.core.database import get_db
 from backend.core.exceptions import NotFoundError
+from backend.core.permissions import Permission
 from backend.modules.pedidos.schemas import PedidoCreate, PedidoUpdateStatus, PedidoRead, PedidoList
 from backend.modules.pedidos.repository import PedidoRepository
 from backend.modules.pedidos.service import OrderService
@@ -68,6 +69,7 @@ async def create_order(
 async def update_order_status(
     order_id: UUID,
     data: PedidoUpdateStatus,
+    _: Annotated[dict, Depends(require_permission(Permission.ORDER_UPDATE_STATUS))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     repo = PedidoRepository(db)

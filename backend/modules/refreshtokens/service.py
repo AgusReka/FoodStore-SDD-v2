@@ -1,9 +1,9 @@
 """Refresh token service."""
 from datetime import datetime, timedelta, timezone
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from backend.core.exceptions import NotFoundError, UnauthorizedError
-from backend.core.security import hash_password
+from backend.core.security import generate_safe_token, hash_token_deterministic
 from backend.core.service import BaseService
 from backend.modules.refreshtokens.model import RefreshToken
 from backend.modules.refreshtokens.repository import RefreshTokenRepository
@@ -14,8 +14,8 @@ class RefreshTokenService(BaseService[RefreshToken]):
         super().__init__(repository)
 
     async def create_token(self, user_id: UUID, expires_delta: timedelta | None = None) -> tuple[str, RefreshToken]:
-        raw_token = str(uuid4())
-        hashed = hash_password(raw_token)
+        raw_token = generate_safe_token()
+        hashed = hash_token_deterministic(raw_token)
 
         if expires_delta is None:
             expires_delta = timedelta(days=7)
@@ -31,7 +31,7 @@ class RefreshTokenService(BaseService[RefreshToken]):
         return raw_token, token
 
     async def validate_and_rotate(self, token_str: str) -> tuple[str, RefreshToken]:
-        hashed = hash_password(token_str)
+        hashed = hash_token_deterministic(token_str)
         stored = await self.repository.get_by_token(hashed)
         if not stored:
             raise UnauthorizedError("Invalid refresh token")
@@ -48,7 +48,7 @@ class RefreshTokenService(BaseService[RefreshToken]):
         return new_raw, new_token
 
     async def revoke_token(self, token_str: str) -> None:
-        hashed = hash_password(token_str)
+        hashed = hash_token_deterministic(token_str)
         stored = await self.repository.get_by_token(hashed)
         if not stored:
             raise NotFoundError("Refresh token not found")

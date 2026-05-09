@@ -19,6 +19,7 @@ from backend.core.config import settings
 
 # Import ALL model modules to register them with Base.metadata
 import backend.modules.usuarios.model
+import backend.modules.auth.model
 import backend.modules.refreshtokens.model
 import backend.modules.categorias.model
 import backend.modules.productos.model

@@ -2,7 +2,7 @@
 from uuid import UUID
 
 from backend.core.exceptions import ConflictError, NotFoundError
-from backend.core.security import hash_password
+from backend.core.security import hash_password, verify_password
 from backend.core.service import BaseService
 from backend.modules.usuarios.model import User
 from backend.modules.usuarios.repository import UserRepository
@@ -11,6 +11,11 @@ from backend.modules.usuarios.repository import UserRepository
 class UserService(BaseService[User]):
     def __init__(self, repository: UserRepository):
         super().__init__(repository)
+
+    async def update_password(self, user_id: UUID, new_password: str) -> None:
+        """Hash and update the user's password."""
+        hashed = hash_password(new_password)
+        await self.repository.update(user_id, hashed_password=hashed)
 
     async def create_user(self, **kwargs) -> User:
         email = kwargs.get("email", "")

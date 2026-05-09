@@ -25,6 +25,17 @@ export async function post<T = unknown>(
 }
 
 /**
+ * Generic PUT request
+ */
+export async function put<T = unknown>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<T>> {
+  return apiClient.put<T>(url, data, config)
+}
+
+/**
  * Generic PATCH request
  */
 export async function patch<T = unknown>(

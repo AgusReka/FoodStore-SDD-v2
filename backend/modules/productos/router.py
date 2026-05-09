@@ -2,8 +2,10 @@ from uuid import UUID
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from backend.core.auth import require_permission
 from backend.core.database import get_db
 from backend.core.exceptions import NotFoundError
+from backend.core.permissions import Permission
 from backend.modules.productos.schemas import ProductCreate, ProductUpdate, ProductRead, ProductList
 from backend.modules.productos.repository import ProductRepository
 from backend.modules.productos.service import ProductService
@@ -46,7 +48,11 @@ async def get_product(product_id: UUID, db: Annotated[AsyncSession, Depends(get_
 
 
 @router.post("/", response_model=ProductRead, status_code=status.HTTP_201_CREATED)
-async def create_product(data: ProductCreate, db: Annotated[AsyncSession, Depends(get_db)]):
+async def create_product(
+    data: ProductCreate,
+    _: Annotated[dict, Depends(require_permission(Permission.PRODUCT_CREATE))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     product_repo = ProductRepository(db)
     categoria_repo = CategoriaRepository(db)
     service = ProductService(product_repo, categoria_repo)
@@ -54,7 +60,12 @@ async def create_product(data: ProductCreate, db: Annotated[AsyncSession, Depend
 
 
 @router.patch("/{product_id}", response_model=ProductRead)
-async def update_product(product_id: UUID, data: ProductUpdate, db: Annotated[AsyncSession, Depends(get_db)]):
+async def update_product(
+    product_id: UUID,
+    data: ProductUpdate,
+    _: Annotated[dict, Depends(require_permission(Permission.PRODUCT_UPDATE))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     product_repo = ProductRepository(db)
     categoria_repo = CategoriaRepository(db)
     service = ProductService(product_repo, categoria_repo)
@@ -62,7 +73,11 @@ async def update_product(product_id: UUID, data: ProductUpdate, db: Annotated[As
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_product(product_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
+async def delete_product(
+    product_id: UUID,
+    _: Annotated[dict, Depends(require_permission(Permission.PRODUCT_DELETE))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     product_repo = ProductRepository(db)
     categoria_repo = CategoriaRepository(db)
     service = ProductService(product_repo, categoria_repo)

@@ -29,6 +29,7 @@ from backend.core.logging import get_logger
 from backend.core.middleware import RequestIDMiddleware
 # Import all models so they're registered with Base.metadata
 import backend.modules.usuarios.model  # noqa: F401
+import backend.modules.auth.model  # noqa: F401
 import backend.modules.refreshtokens.model  # noqa: F401
 import backend.modules.categorias.model  # noqa: F401
 import backend.modules.productos.model  # noqa: F401

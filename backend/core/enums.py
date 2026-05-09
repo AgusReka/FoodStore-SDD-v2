@@ -27,3 +27,8 @@ class PaymentStatus(str, enum.Enum):
     APROBADO = "aprobado"
     RECHAZADO = "rechazado"
     REEMBOLSADO = "reembolsado"
+
+
+class AuthTokenPurpose(str, enum.Enum):
+    PASSWORD_RESET = "password_reset"
+    EMAIL_VERIFICATION = "email_verification"

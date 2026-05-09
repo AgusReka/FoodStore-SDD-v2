@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { post } from '../api/client'
+import { post, put, get as apiGet } from '../api/client'
 import { ENDPOINTS } from '../api/endpoints'
 
 interface UserRead {
@@ -24,16 +24,45 @@ interface LoginResponse {
   token_type: string
 }
 
+interface RegisterData {
+  email: string
+  username: string
+  password: string
+  first_name: string
+  last_name: string
+  phone?: string
+}
+
+interface ResetPasswordData {
+  token: string
+  new_password: string
+  confirm_password: string
+}
+
+interface ChangePasswordData {
+  current_password: string
+  new_password: string
+  confirm_password: string
+}
+
 interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   user: UserRead | null
   isLoading: boolean
+  profileLoading: boolean
   hasError: boolean
 
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   refreshTokens: () => Promise<void>
+  fetchProfile: () => Promise<void>
+  register: (data: RegisterData) => Promise<void>
+  forgotPassword: (email: string) => Promise<void>
+  resetPassword: (data: ResetPasswordData) => Promise<void>
+  sendVerification: (email: string) => Promise<void>
+  verifyEmail: (token: string) => Promise<void>
+  changePassword: (data: ChangePasswordData) => Promise<void>
   setUser: (user: UserRead) => void
   clearAuth: () => void
 }
@@ -45,6 +74,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       isLoading: false,
+      profileLoading: false,
       hasError: false,
 
       login: async (email, password) => {
@@ -56,10 +86,25 @@ export const useAuthStore = create<AuthState>()(
             accessToken: access_token,
             refreshToken: refresh_token,
             isLoading: false,
+            profileLoading: true,
           })
+          // Fetch user profile immediately so it's ready for ProtectedRoute
+          await get().fetchProfile()
         } catch (error) {
-          set({ isLoading: false, hasError: true })
+          set({ isLoading: false, hasError: true, profileLoading: false })
           throw error
+        }
+      },
+
+      fetchProfile: async () => {
+        const { accessToken } = get()
+        if (!accessToken) return
+        set({ profileLoading: true })
+        try {
+          const response = await apiGet<UserRead>(ENDPOINTS.AUTH_ME)
+          set({ user: response.data, profileLoading: false })
+        } catch {
+          set({ profileLoading: false })
         }
       },
 
@@ -101,6 +146,77 @@ export const useAuthStore = create<AuthState>()(
             refreshToken: null,
             user: null,
           })
+          throw error
+        }
+      },
+
+      register: async (data) => {
+        set({ isLoading: true, hasError: false })
+        try {
+          await post(ENDPOINTS.AUTH_REGISTER, data)
+          set({ isLoading: false })
+        } catch (error) {
+          set({ isLoading: false, hasError: true })
+          throw error
+        }
+      },
+
+      forgotPassword: async (email) => {
+        set({ isLoading: true, hasError: false })
+        try {
+          await post(ENDPOINTS.AUTH_FORGOT_PASSWORD, { email })
+          set({ isLoading: false })
+        } catch (error) {
+          set({ isLoading: false, hasError: true })
+          throw error
+        }
+      },
+
+      resetPassword: async (data) => {
+        set({ isLoading: true, hasError: false })
+        try {
+          await post(ENDPOINTS.AUTH_RESET_PASSWORD, data)
+          set({ isLoading: false })
+        } catch (error) {
+          set({ isLoading: false, hasError: true })
+          throw error
+        }
+      },
+
+      sendVerification: async (email) => {
+        set({ isLoading: true, hasError: false })
+        try {
+          await post(ENDPOINTS.AUTH_SEND_VERIFICATION, { email })
+          set({ isLoading: false })
+        } catch (error) {
+          set({ isLoading: false, hasError: true })
+          throw error
+        }
+      },
+
+      verifyEmail: async (token) => {
+        set({ isLoading: true, hasError: false })
+        try {
+          await post(ENDPOINTS.AUTH_VERIFY_EMAIL, { token })
+          // Update user's is_verified if user is loaded
+          const user = get().user
+          if (user) {
+            set({ user: { ...user, is_verified: true } })
+          }
+          set({ isLoading: false })
+        } catch (error) {
+          set({ isLoading: false, hasError: true })
+          throw error
+        }
+      },
+
+      changePassword: async (data) => {
+        set({ isLoading: true, hasError: false })
+        try {
+          await put(ENDPOINTS.AUTH_CHANGE_PASSWORD, data)
+          set({ isLoading: false })
+        } catch (error) {
+          set({ isLoading: false, hasError: true })
           throw error
         }
       },

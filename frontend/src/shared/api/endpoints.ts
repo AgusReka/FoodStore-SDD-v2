@@ -18,6 +18,11 @@ export const ENDPOINTS = {
   AUTH_ME: `${AUTH}/me`,
   AUTH_REFRESH: `${AUTH}/refresh`,
   AUTH_LOGOUT: `${AUTH}/logout`,
+  AUTH_FORGOT_PASSWORD: `${AUTH}/forgot-password`,
+  AUTH_RESET_PASSWORD: `${AUTH}/reset-password`,
+  AUTH_SEND_VERIFICATION: `${AUTH}/send-verification`,
+  AUTH_VERIFY_EMAIL: `${AUTH}/verify-email`,
+  AUTH_CHANGE_PASSWORD: `${AUTH}/change-password`,
 
   // Users
   USERS_LIST: `${USERS}/`,

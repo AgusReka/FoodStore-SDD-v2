@@ -2,8 +2,10 @@ from uuid import UUID
 from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from backend.core.auth import require_permission
 from backend.core.database import get_db
 from backend.core.exceptions import NotFoundError
+from backend.core.permissions import Permission
 from backend.modules.pagos.schemas import PagoCreate, PagoUpdateStatus, PagoRead
 from backend.modules.pagos.repository import PagoRepository
 from backend.modules.pagos.service import PagoService
@@ -13,7 +15,11 @@ router = APIRouter(tags=["Pagos"])
 
 
 @router.post("/", response_model=PagoRead, status_code=status.HTTP_201_CREATED)
-async def create_payment(data: PagoCreate, db: Annotated[AsyncSession, Depends(get_db)]):
+async def create_payment(
+    data: PagoCreate,
+    _: Annotated[dict, Depends(require_permission(Permission.PAYMENT_CREATE))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     pago_repo = PagoRepository(db)
     pedido_repo = PedidoRepository(db)
     service = PagoService(pago_repo, pedido_repo)
@@ -25,7 +31,11 @@ async def create_payment(data: PagoCreate, db: Annotated[AsyncSession, Depends(g
 
 
 @router.get("/{payment_id}", response_model=PagoRead)
-async def get_payment(payment_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
+async def get_payment(
+    payment_id: UUID,
+    _: Annotated[dict, Depends(require_permission(Permission.PAYMENT_READ))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     pago_repo = PagoRepository(db)
     pedido_repo = PedidoRepository(db)
     service = PagoService(pago_repo, pedido_repo)
@@ -39,6 +49,7 @@ async def get_payment(payment_id: UUID, db: Annotated[AsyncSession, Depends(get_
 async def update_payment_status(
     payment_id: UUID,
     data: PagoUpdateStatus,
+    _: Annotated[dict, Depends(require_permission(Permission.PAYMENT_UPDATE_STATUS))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     pago_repo = PagoRepository(db)

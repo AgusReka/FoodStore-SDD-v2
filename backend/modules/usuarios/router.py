@@ -2,8 +2,10 @@ from uuid import UUID
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from backend.core.auth import require_permission
 from backend.core.database import get_db
 from backend.core.exceptions import NotFoundError
+from backend.core.permissions import Permission
 from backend.modules.usuarios.schemas import UserCreate, UserUpdate, UserRead, UserList
 from backend.modules.usuarios.repository import UserRepository
 from backend.modules.usuarios.service import UserService
@@ -13,6 +15,7 @@ router = APIRouter(tags=["Usuarios"])
 
 @router.get("/", response_model=UserList)
 async def list_users(
+    _: Annotated[dict, Depends(require_permission(Permission.USER_LIST))],
     db: Annotated[AsyncSession, Depends(get_db)],
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
@@ -29,7 +32,11 @@ async def list_users(
 
 
 @router.get("/{user_id}", response_model=UserRead)
-async def get_user(user_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
+async def get_user(
+    user_id: UUID,
+    _: Annotated[dict, Depends(require_permission(Permission.USER_READ))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     repo = UserRepository(db)
     service = UserService(repo)
     user = await service.get(user_id)
@@ -39,21 +46,34 @@ async def get_user(user_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
 
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-async def create_user(data: UserCreate, db: Annotated[AsyncSession, Depends(get_db)]):
+async def create_user(
+    data: UserCreate,
+    _: Annotated[dict, Depends(require_permission(Permission.USER_CREATE))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     repo = UserRepository(db)
     service = UserService(repo)
     return await service.create_user(**data.model_dump())
 
 
 @router.patch("/{user_id}", response_model=UserRead)
-async def update_user(user_id: UUID, data: UserUpdate, db: Annotated[AsyncSession, Depends(get_db)]):
+async def update_user(
+    user_id: UUID,
+    data: UserUpdate,
+    _: Annotated[dict, Depends(require_permission(Permission.USER_UPDATE))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     repo = UserRepository(db)
     service = UserService(repo)
     return await service.update_user(user_id, **data.model_dump(exclude_unset=True))
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
+async def delete_user(
+    user_id: UUID,
+    _: Annotated[dict, Depends(require_permission(Permission.USER_DELETE))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     repo = UserRepository(db)
     service = UserService(repo)
     deleted = await service.delete(user_id)
