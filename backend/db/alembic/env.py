@@ -24,6 +24,7 @@ import backend.modules.refreshtokens.model
 import backend.modules.categorias.model
 import backend.modules.productos.model
 import backend.modules.direcciones.model
+import backend.modules.ingredientes.model
 import backend.modules.pedidos.model
 import backend.modules.pagos.model
 

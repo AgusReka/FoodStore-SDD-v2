@@ -5,6 +5,7 @@ const AUTH = '/auth'
 const USERS = '/usuarios'
 const PRODUCTS = '/productos'
 const CATEGORIES = '/categorias'
+const INGREDIENTS = '/ingredientes'
 const ORDERS = '/pedidos'
 const PAYMENTS = '/pagos'
 const ADDRESSES = '/direcciones'
@@ -31,10 +32,15 @@ export const ENDPOINTS = {
   // Products
   PRODUCTS_LIST: `${PRODUCTS}/`,
   PRODUCTS_DETAIL: (id: string | number) => `${PRODUCTS}/${id}`,
+  PRODUCTS_STOCK: (id: string | number) => `${PRODUCTS}/${id}/stock`,
 
   // Categories
   CATEGORIES_LIST: `${CATEGORIES}/`,
   CATEGORIES_DETAIL: (id: string | number) => `${CATEGORIES}/${id}`,
+
+  // Ingredients
+  INGREDIENTS_LIST: `${INGREDIENTS}/`,
+  INGREDIENTS_DETAIL: (id: string | number) => `${INGREDIENTS}/${id}`,
 
   // Orders
   ORDERS_LIST: `${ORDERS}/`,
@@ -57,6 +63,7 @@ export const ENDPOINTS = {
   ADMIN_USERS_LIST: `${ADMIN}/usuarios`,
   ADMIN_USERS_ROLE: (id: string | number) => `${ADMIN}/usuarios/${id}/role`,
   ADMIN_ORDERS_LIST: `${ADMIN}/pedidos`,
+  ADMIN_STOCK_ALERTS: `${ADMIN}/stock-alerts`,
 
   // Health
   HEALTH_CHECK: `${HEALTH}`,

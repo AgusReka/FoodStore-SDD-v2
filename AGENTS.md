@@ -101,9 +101,10 @@ Estas skills están instaladas localmente en `.agents/skills/` y disponibles par
 | **jwt-security** | Implementación de JWT | Al trabajar con autenticación, tokens, login/registro | `.agents/skills/jwt-security/` |
 | **postgresql-database-engineering** | Ingeniería de PostgreSQL | Al crear migraciones, índices, consultas complejas, o modelar DB | `.agents/skills/postgresql-database-engineering/` |
 | **tailwindcss** | Estilos con TailwindCSS | Al diseñar componentes UI, layouts, o estilos responsivos | `.agents/skills/tailwindcss/` |
-| **tailwind-design-system** | Sistemas de diseño con Tailwind v4 | Al crear design tokens, themes, dark mode, o componentes reutilizables | `.agents/skills/tailwind-design-system/` |
+| **tailwind-design-system** | Sistemas de diseño con Tailwind v4 | Al crear design tokens, themes, dark mode, o componentes reutilizables en la sección **admin** | `.agents/skills/tailwind-design-system/` |
 | **zustand-state-management** | Manejo de estado con Zustand | Al crear/editar stores globales, estado de auth/carrito/etc. | `.agents/skills/zustand-state-management/` |
-| **dashboard-crud-page** | Páginas CRUD estandarizadas | Al crear páginas de listado/creación/edición/borrado de recursos | `.agents/skills/dashboard-crud-page/` |
+| **dashboard-crud-page** | Páginas CRUD estandarizadas | Al crear páginas CRUD de listado/creación/edición/borrado en la sección **admin** | `.agents/skills/dashboard-crud-page/` |
+| **food-ecommerce-ui** | UI de e-commerce para delivery de comida (Mesa Design System) | Al crear landing pages, grillas de productos, cards de comida, carrito, checkout, y toda la UI del frontend de **cliente** | `.agents/skills/food-ecommerce-ui/` |
 | **judgment-day** | Revisión adversarial paralela | Al decir "judgment day", "revisión", "que lo juzguen", "doble review" | `.agents/skills/judgment-day/` |
 | **skill-creator** | Crear nuevas skills | Al querer documentar patrones o crear nuevas instrucciones para el agente | `.agents/skills/skill-creator/` |
 | **find-skills** | Descubrir e instalar skills del ecosistema | Al preguntar "cómo hago X", "hay una skill para X", o querer extender capacidades | `.agents/skills/find-skills/` |

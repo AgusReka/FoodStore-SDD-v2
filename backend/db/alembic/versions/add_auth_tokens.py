@@ -1,7 +1,7 @@
 """add auth_tokens table
 
-Revision ID: a1b2c3d4e5f6
-Revises: c29ed26f813c
+Revision ID: b2c3d4e5f6a1
+Revises: a1b2c3d4e5f6
 Create Date: 2026-05-08 19:30:00.000000
 """
 from typing import Sequence, Union
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'a1b2c3d4e5f6'
-down_revision: Union[str, None] = 'c29ed26f813c'
+revision: str = 'b2c3d4e5f6a1'
+down_revision: Union[str, None] = 'a1b2c3d4e5f6'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

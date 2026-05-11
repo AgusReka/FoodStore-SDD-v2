@@ -25,6 +25,12 @@ class Permission(str, enum.Enum):
     USER_DELETE = "user:delete"
     USER_CHANGE_ROLE = "user:change_role"
 
+    INGREDIENT_LIST = "ingredient:list"
+    INGREDIENT_READ = "ingredient:read"
+    INGREDIENT_CREATE = "ingredient:create"
+    INGREDIENT_UPDATE = "ingredient:update"
+    INGREDIENT_DELETE = "ingredient:delete"
+
     ORDER_LIST_ALL = "order:list_all"
     ORDER_READ_ANY = "order:read_any"
     ORDER_UPDATE_STATUS = "order:update_status"
@@ -60,6 +66,11 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         Permission.PAYMENT_READ,
         Permission.PAYMENT_CREATE,
         Permission.PAYMENT_UPDATE_STATUS,
+        Permission.INGREDIENT_LIST,
+        Permission.INGREDIENT_READ,
+        Permission.INGREDIENT_CREATE,
+        Permission.INGREDIENT_UPDATE,
+        Permission.INGREDIENT_DELETE,
     },
     UserRole.CLIENTE: set(),
 }

@@ -9,7 +9,12 @@ import ForgotPasswordPage from '@pages/ForgotPasswordPage'
 import ResetPasswordPage from '@pages/ResetPasswordPage'
 import VerifyEmailPage from '@pages/VerifyEmailPage'
 import AdminPage from '@pages/AdminPage'
+import AdminDashboard from '@pages/AdminDashboard'
 import NotFound from '@pages/NotFound'
+import { CategoryListPage } from '@features/admin/categories'
+import { IngredientListPage } from '@features/admin/ingredients'
+import { ProductListPage } from '@features/admin/products'
+import { StockAlertsPage } from '@features/admin/StockAlertsPage'
 
 const App = () => {
   return (
@@ -27,8 +32,14 @@ const App = () => {
         <Route element={<ProtectedRoute/>}>
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
-        <Route element={<ProtectedRoute requiredRole="admin" />}>
-          <Route path="/admin" element={<AdminPage />} />
+        <Route element={<ProtectedRoute  />}>
+          <Route path="/admin" element={<AdminPage />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="categories" element={<CategoryListPage />} />
+            <Route path="ingredients" element={<IngredientListPage />} />
+            <Route path="products" element={<ProductListPage />} />
+            <Route path="stock-alerts" element={<StockAlertsPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotFound />} />

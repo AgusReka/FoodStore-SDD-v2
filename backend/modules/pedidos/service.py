@@ -28,9 +28,9 @@ class OrderService(BaseService[Order]):
             if not product:
                 raise NotFoundError(f"Product {product_id} not found")
 
-            available = await self.product_repo.check_stock(product_id, quantity)
+            available, error_msg = await self.product_repo.check_stock(product_id, quantity)
             if not available:
-                raise ValidationError(f"Product '{product.name}' is not available")
+                raise ValidationError(error_msg or f"Product '{product.name}' is not available")
 
             unit_price = float(product.price)
             subtotal = unit_price * quantity
@@ -58,6 +58,27 @@ class OrderService(BaseService[Order]):
         await self.repository.session.refresh(order)
         return order
 
+    async def _deduct_stock(self, order: Order) -> None:
+        """Atomically deduct stock for all items in an order.
+
+        Uses FOR UPDATE within the current transaction.
+        Also re-validates stock before deducting (double-check).
+        """
+        for item in order.items:
+            # Re-validate stock before deducting
+            available, error_msg = await self.product_repo.check_stock(item.product_id, item.quantity)
+            if not available:
+                raise ValidationError(
+                    error_msg or f"Stock changed for product {item.product_id} — cannot confirm"
+                )
+            # Deduct
+            await self.product_repo.deduct_product_stock(item.product_id, item.quantity)
+
+    async def _restore_stock(self, order: Order) -> None:
+        """Atomically restore stock for all items in a confirmed order being cancelled."""
+        for item in order.items:
+            await self.product_repo.restore_product_stock(item.product_id, item.quantity)
+
     async def update_status(self, order_id: UUID, new_status: OrderStatus) -> Order:
         order = await self.repository.get(order_id)
         if not order:
@@ -75,6 +96,20 @@ class OrderService(BaseService[Order]):
             raise ValidationError(
                 f"Invalid status transition from '{order.status.value}' to '{new_status.value}'"
             )
+
+        # Stock operations within transaction
+        if new_status == OrderStatus.CONFIRMADO and order.status == OrderStatus.PENDIENTE:
+            # Load items with relationship
+            order = await self.repository.get(order_id)
+            # Refresh with items
+            await self.repository.session.refresh(order)
+            await self._deduct_stock(order)
+
+        if new_status == OrderStatus.CANCELADO and order.status == OrderStatus.CONFIRMADO:
+            # Restore stock that was deducted at confirmation
+            order = await self.repository.get(order_id)
+            await self.repository.session.refresh(order)
+            await self._restore_stock(order)
 
         updated = await self.repository.update(order_id, status=new_status)
         return updated

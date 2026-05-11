@@ -1,23 +1,85 @@
+import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@shared/hooks/useAuth'
+import { useQuery } from '@tanstack/react-query'
+import { get } from '@shared/api/client'
+import { ENDPOINTS } from '@shared/api/endpoints'
+
+interface StockAlertList {
+  total: number
+}
+
+const navItems = [
+  { to: '/admin', label: 'Dashboard', end: true },
+  { to: '/admin/categories', label: 'Categorías', end: false },
+  { to: '/admin/ingredients', label: 'Ingredientes', end: false },
+  { to: '/admin/products', label: 'Productos', end: false },
+  { to: '/admin/stock-alerts', label: 'Alertas de Stock', end: false },
+]
 
 const AdminPage = () => {
   const { user } = useAuth()
 
+  // Fetch alert count for sidebar badge
+  const { data: alertData } = useQuery<StockAlertList>({
+    queryKey: ['stock-alerts-count'],
+    queryFn: async () => {
+      const response = await get<StockAlertList>(ENDPOINTS.ADMIN_STOCK_ALERTS)
+      return response.data
+    },
+    refetchInterval: 60_000,
+  })
+
+  const alertCount = alertData?.total ?? 0
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
-          Panel de Administración
-        </h1>
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <p className="text-gray-600 mb-4">
-            Bienvenido, <span className="font-semibold text-gray-900">{user?.first_name}</span>
-          </p>
-          <p className="text-sm text-gray-500">
-            Panel en construcción — próximamente podrás gestionar usuarios, productos y pedidos desde aquí.
-          </p>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">Admin Panel</h2>
+          <p className="text-sm text-gray-500 mt-1 truncate">{user?.first_name} {user?.last_name}</p>
         </div>
-      </div>
+
+        <nav className="flex-1 p-4 space-y-1" aria-label="Navegación administrativa">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`
+              }
+            >
+              <span>{item.label}</span>
+              {item.label === 'Alertas de Stock' && alertCount > 0 && (
+                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                  {alertCount}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-gray-200">
+          <NavLink
+            to="/"
+            className="block px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            ← Volver a la tienda
+          </NavLink>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 overflow-auto">
+        <div className="p-8">
+          <Outlet />
+        </div>
+      </main>
     </div>
   )
 }

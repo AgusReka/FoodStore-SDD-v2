@@ -1,7 +1,6 @@
 """Database seed script for development data."""
 import asyncio
 import sys
-import uuid
 from pathlib import Path
 
 # Ensure the project root is in sys.path so 'backend' package can be found
@@ -19,6 +18,7 @@ from backend.modules.usuarios.model import User
 from backend.modules.refreshtokens.model import RefreshToken
 from backend.modules.categorias.model import Category
 from backend.modules.productos.model import Product
+from backend.modules.ingredientes.model import Ingredient, ProductIngredient
 from backend.modules.direcciones.model import Address
 from backend.modules.pedidos.model import Order, OrderItem
 from backend.modules.pagos.model import Payment
@@ -54,9 +54,9 @@ async def seed_admin(session):
         },
     )
     if created:
-        print(f"  ✓ Admin user created: {admin.email}")
+        print(f"  [OK] Admin user created: {admin.email}")
     else:
-        print(f"  - Admin user already exists: {admin.email}")
+        print(f"  [  ] Admin user already exists: {admin.email}")
     return admin
 
 
@@ -77,9 +77,9 @@ async def seed_users(session):
         },
     )
     if created:
-        print(f"  ✓ Test user created: {user.email}")
+        print(f"  [OK] Test user created: {user.email}")
     else:
-        print(f"  - Test user already exists: {user.email}")
+        print(f"  [  ] Test user already exists: {user.email}")
     return user
 
 
@@ -97,11 +97,47 @@ async def seed_categories(session):
     for cat_data in categories_data:
         cat, created = await get_or_create(session, Category, name=cat_data["name"], defaults=cat_data)
         if created:
-            print(f"  ✓ Category created: {cat.name}")
+            print(f"  [OK] Category created: {cat.name}")
         else:
-            print(f"  - Category already exists: {cat.name}")
+            print(f"  [  ] Category already exists: {cat.name}")
         categories.append(cat)
     return categories
+
+
+async def seed_ingredients(session):
+    """Create sample ingredients with stock values."""
+    ingredients_data = [
+        {"name": "Pan de hamburguesa", "description": "Pan para hamburguesa y lomito", "unit": "unidades", "stock_actual": 50, "stock_minimo": 10},
+        {"name": "Carne picada", "description": "Carne vacuna picada", "unit": "gramos", "stock_actual": 5000, "stock_minimo": 1000},
+        {"name": "Queso mozzarella", "description": "Queso mozzarella", "unit": "gramos", "stock_actual": 3000, "stock_minimo": 500},
+        {"name": "Lechuga", "description": "Lechuga fresca", "unit": "unidades", "stock_actual": 30, "stock_minimo": 10},
+        {"name": "Tomate", "description": "Tomate fresco", "unit": "unidades", "stock_actual": 40, "stock_minimo": 10},
+        {"name": "Masa de pizza", "description": "Masa para pizza", "unit": "unidades", "stock_actual": 20, "stock_minimo": 5},
+        {"name": "Albahaca", "description": "Albahaca fresca", "unit": "gramos", "stock_actual": 200, "stock_minimo": 50},
+        {"name": "Jamón", "description": "Jamón cocido", "unit": "gramos", "stock_actual": 2000, "stock_minimo": 500},
+        {"name": "Huevo", "description": "Huevo fresco", "unit": "unidades", "stock_actual": 60, "stock_minimo": 20},
+        {"name": "Papas", "description": "Papas frescas", "unit": "gramos", "stock_actual": 10000, "stock_minimo": 2000},
+        {"name": "Cebolla", "description": "Cebolla fresca", "unit": "unidades", "stock_actual": 30, "stock_minimo": 10},
+        {"name": "Morrones", "description": "Morrones asados", "unit": "unidades", "stock_actual": 20, "stock_minimo": 5},
+        {"name": "Pasta seca", "description": "Pasta seca (spaghetti, ravioles, lasagna)", "unit": "gramos", "stock_actual": 5000, "stock_minimo": 1000},
+        {"name": "Ricotta", "description": "Ricotta para rellenos", "unit": "gramos", "stock_actual": 2000, "stock_minimo": 500},
+        {"name": "Dulce de leche", "description": "Dulce de leche", "unit": "gramos", "stock_actual": 2000, "stock_minimo": 500},
+    ]
+    ingredients = {}
+    for ing_data in ingredients_data:
+        name = ing_data.pop("name")
+        ing, created = await get_or_create(
+            session,
+            Ingredient,
+            name=name,
+            defaults=ing_data,
+        )
+        if created:
+            print(f"  [OK] Ingredient created: {ing.name}")
+        else:
+            print(f"  [  ] Ingredient already exists: {ing.name}")
+        ingredients[name] = ing
+    return ingredients
 
 
 async def seed_products(session, categories):
@@ -110,9 +146,9 @@ async def seed_products(session, categories):
 
     products_data = {
         "Bebidas": [
-            {"name": "Coca Cola 500ml", "price": 1200.00, "description": "Gaseosa Coca Cola 500ml"},
-            {"name": "Agua Mineral 500ml", "price": 800.00, "description": "Agua mineral sin gas 500ml"},
-            {"name": "Jugo de Naranja", "price": 1500.00, "description": "Jugo de naranja natural 400ml"},
+            {"name": "Coca Cola 500ml", "price": 1200.00, "description": "Gaseosa Coca Cola 500ml", "stock_cantidad": 100},
+            {"name": "Agua Mineral 500ml", "price": 800.00, "description": "Agua mineral sin gas 500ml", "stock_cantidad": 100},
+            {"name": "Jugo de Naranja", "price": 1500.00, "description": "Jugo de naranja natural 400ml", "stock_cantidad": 50},
         ],
         "Comidas Rápidas": [
             {"name": "Hamburguesa Clásica", "price": 4500.00, "description": "Hamburguesa con queso, lechuga y tomate"},
@@ -130,40 +166,122 @@ async def seed_products(session, categories):
             {"name": "Lasagna Clásica", "price": 6500.00, "description": "Lasagna de carne con salsa bechamel"},
         ],
         "Postres": [
-            {"name": "Flan Casero", "price": 2500.00, "description": "Flan casero con dulce de leche"},
-            {"name": "Helado 2 bochas", "price": 3000.00, "description": "Helado artesanal 2 bochas"},
-            {"name": "Torta de Chocolate", "price": 3500.00, "description": "Porción de torta de chocolate"},
+            {"name": "Flan Casero", "price": 2500.00, "description": "Flan casero con dulce de leche", "stock_cantidad": 20},
+            {"name": "Helado 2 bochas", "price": 3000.00, "description": "Helado artesanal 2 bochas", "stock_cantidad": 30},
+            {"name": "Torta de Chocolate", "price": 3500.00, "description": "Porción de torta de chocolate", "stock_cantidad": 15},
         ],
         "Ensaladas": [
-            {"name": "Ensalada Caesar", "price": 4200.00, "description": "Lechuga, pollo, crutones, parmesano"},
-            {"name": "Ensalada Griega", "price": 4500.00, "description": "Tomate, pepino, oliva, queso feta"},
-            {"name": "Bowl Veggie", "price": 4800.00, "description": "Bowl de quinoa, palta y vegetales"},
+            {"name": "Ensalada Caesar", "price": 4200.00, "description": "Lechuga, pollo, crutones, parmesano", "stock_cantidad": 20},
+            {"name": "Ensalada Griega", "price": 4500.00, "description": "Tomate, pepino, oliva, queso feta", "stock_cantidad": 20},
+            {"name": "Bowl Veggie", "price": 4800.00, "description": "Bowl de quinoa, palta y vegetales", "stock_cantidad": 15},
         ],
     }
 
-    products = []
+    products_by_name = {}
     for cat_name, cat_products in products_data.items():
         category = categories_by_name.get(cat_name)
         if not category:
             continue
         for prod_data in cat_products:
+            name = prod_data.pop("name")
             product, created = await get_or_create(
                 session,
                 Product,
-                name=prod_data["name"],
+                name=name,
                 category_id=category.id,
                 defaults={
-                    "price": prod_data["price"],
+                    "price": prod_data.get("price"),
                     "description": prod_data.get("description"),
+                    "stock_cantidad": prod_data.get("stock_cantidad"),
                     "is_available": True,
                 },
             )
             if created:
-                print(f"  ✓ Product created: {product.name} ({cat_name})")
+                print(f"  [OK] Product created: {product.name} ({cat_name})")
             else:
-                print(f"  - Product already exists: {product.name}")
-            products.append(product)
-    return products
+                print(f"  [  ] Product already exists: {product.name}")
+            products_by_name[name] = product
+    return products_by_name
+
+
+async def seed_product_ingredients(session, products, ingredients):
+    """Link composite products to their ingredients with quantities."""
+    relationships = {
+        "Hamburguesa Clásica": [
+            ("Pan de hamburguesa", 2),
+            ("Carne picada", 200),
+            ("Queso mozzarella", 50),
+            ("Lechuga", 1),
+            ("Tomate", 2),
+        ],
+        "Lomito Completo": [
+            ("Pan de hamburguesa", 2),
+            ("Carne picada", 250),
+            ("Jamón", 100),
+            ("Queso mozzarella", 50),
+            ("Huevo", 2),
+            ("Papas", 200),
+        ],
+        "Papas Fritas Grandes": [
+            ("Papas", 500),
+        ],
+        "Pizza Margarita": [
+            ("Masa de pizza", 1),
+            ("Queso mozzarella", 200),
+            ("Tomate", 3),
+            ("Albahaca", 10),
+        ],
+        "Pizza Napolitana": [
+            ("Masa de pizza", 1),
+            ("Queso mozzarella", 200),
+            ("Tomate", 3),
+        ],
+        "Pizza Especial": [
+            ("Masa de pizza", 1),
+            ("Queso mozzarella", 200),
+            ("Jamón", 100),
+            ("Morrones", 2),
+        ],
+        "Spaghetti Bolognese": [
+            ("Pasta seca", 400),
+            ("Carne picada", 300),
+            ("Tomate", 3),
+        ],
+        "Ravioles de Ricotta": [
+            ("Pasta seca", 400),
+            ("Ricotta", 200),
+        ],
+        "Lasagna Clásica": [
+            ("Pasta seca", 400),
+            ("Carne picada", 300),
+            ("Queso mozzarella", 150),
+        ],
+    }
+
+    count = 0
+    for product_name, ingredient_list in relationships.items():
+        product = products.get(product_name)
+        if not product:
+            print(f"  ! Product not found: {product_name}")
+            continue
+        for ing_name, qty in ingredient_list:
+            ingredient = ingredients.get(ing_name)
+            if not ingredient:
+                print(f"  ! Ingredient not found: {ing_name}")
+                continue
+            pi, created = await get_or_create(
+                session,
+                ProductIngredient,
+                product_id=product.id,
+                ingredient_id=ingredient.id,
+                defaults={"quantity": qty},
+            )
+            if created:
+                count += 1
+    if count > 0:
+        print(f"  [OK] {count} product-ingredient relationships created")
+    else:
+        print("  [  ] All product-ingredient relationships already exist")
 
 
 async def seed_address(session, user):
@@ -181,9 +299,9 @@ async def seed_address(session, user):
         },
     )
     if created:
-        print(f"  ✓ Address created for {user.email}: {address.street} {address.street_number}")
+        print(f"  [OK] Address created for {user.email}: {address.street} {address.street_number}")
     else:
-        print(f"  - Address already exists for {user.email}")
+        print(f"  [  ] Address already exists for {user.email}")
     return address
 
 
@@ -193,10 +311,11 @@ async def seed_order(session, user, address, products):
         select(Order).where(Order.user_id == user.id).limit(1)
     )
     if existing_order.scalar_one_or_none():
-        print("  - Test order already exists, skipping")
+        print("  [  ] Test order already exists, skipping")
         return
 
-    total = sum(p.price for p in products[:3])  # First 3 products
+    product_list = list(products.values())
+    total = sum(p.price for p in product_list[:3])
     order = Order(
         user_id=user.id,
         address_id=address.id,
@@ -207,7 +326,7 @@ async def seed_order(session, user, address, products):
     session.add(order)
     await session.flush()
 
-    for product in products[:3]:
+    for product in product_list[:3]:
         item = OrderItem(
             order_id=order.id,
             product_id=product.id,
@@ -226,38 +345,46 @@ async def seed_order(session, user, address, products):
     )
     session.add(payment)
     await session.flush()
-    print(f"  ✓ Test order created: {order.id} (${total:.2f})")
+    print(f"  [OK] Test order created: {order.id} (${total:.2f})")
 
 
 async def main():
     """Run all seed functions in order."""
-    print("🌱 Seeding database...")
+    print("=== Seeding database... ===")
     async with AsyncSessionLocal() as session:
-        print("\n  ── Admin User ──")
+        print("\n  -- Admin User --")
         await seed_admin(session)
         await session.commit()
 
-        print("\n  ── Test Users ──")
+        print("\n  -- Test Users --")
         test_user = await seed_users(session)
         await session.commit()
 
-        print("\n  ── Categories ──")
+        print("\n  -- Categories --")
         categories = await seed_categories(session)
         await session.commit()
 
-        print("\n  ── Products ──")
+        print("\n  -- Ingredients --")
+        ingredients = await seed_ingredients(session)
+        await session.commit()
+
+        print("\n  -- Products --")
         products = await seed_products(session, categories)
         await session.commit()
 
-        print("\n  ── Addresses ──")
+        print("\n  -- Product-Ingredients --")
+        await seed_product_ingredients(session, products, ingredients)
+        await session.commit()
+
+        print("\n  -- Addresses --")
         address = await seed_address(session, test_user)
         await session.commit()
 
-        print("\n  ── Orders ──")
+        print("\n  -- Orders --")
         await seed_order(session, test_user, address, products)
         await session.commit()
 
-    print("\n✅ Seed completed successfully!")
+    print("\n=== Seed completed successfully! ===")
 
 
 if __name__ == "__main__":
