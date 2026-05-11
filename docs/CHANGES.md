@@ -53,32 +53,32 @@ Basado en los documentos del proyecto, el mapa tiene **20 changes** organizados 
 
 ---
 
-## FASE 4 — Carrito y Direcciones
+## FASE 4 — Customer Experience
 
 | Change | Funcionalidad | Historias de Usuario | Dependencias |
 |--------|---------------|----------------------|--------------|
-| `addresses-crud` | CRUD direcciones de entrega, dirección predeterminada, ownership por usuario | US-024 a US-028 | `rbac-guard` |
-| `cart-frontend` | Carrito client-side (Zustand + localStorage), agregar/quitar/modificar items, personalización (exclusión de ingredientes) | US-029 a US-034, US-069, US-070 | `products-crud`, `frontend-stores` |
+| `customer-catalog` | Catálogo público con grilla de productos, filtros por categoría y alérgenos, búsqueda por nombre, cards de producto con indicadores de stock | US-008, US-018, US-019, US-023 | `products-crud` |
+| `customer-cart-checkout` | Carrito client-side (Zustand + localStorage) con personalización de ingredientes, checkout con selección de dirección, validaciones pre-checkout (stock, precios), creación atómica del pedido con UoW y snapshots | US-029 a US-038, US-069, US-070 | `products-crud`, `frontend-stores` |
+| `customer-orders` | Historial de pedidos del cliente con paginación, detalle del pedido (ítems, snapshots, estado), timeline de estados, confirmación visual post-creación | US-049, US-050, US-071 | `customer-cart-checkout` |
 
 ---
 
-## FASE 5 — Pedidos y Pagos (El Core)
+## FASE 5 — Pagos y Administración
 
 | Change | Funcionalidad | Historias de Usuario | Dependencias |
 |--------|---------------|----------------------|--------------|
-| `orders-create` | Creación atómica de pedidos con UoW, snapshots de precio/dirección, validación de stock atómica, historial append-only | US-035, US-036, US-037, US-038 | `cart-frontend`, `addresses-crud` |
-| `orders-state-machine` | Máquina de estados (6 estados), transiciones validadas, decremento/incremento atómico de stock, cancelación con restauración | US-039 a US-044 | `orders-create` |
-| `mercadopago-integration` | Integración Checkout API, preferencias de pago, webhook IPN, idempotency keys, tabla Pago | US-045 a US-048 | `orders-create` |
+| `mercadopago-integration` | Integración Checkout API de MercadoPago, preferencias de pago, webhook IPN con idempotency keys, consulta de estado de pago, reintento de pago rechazado | US-045 a US-048 | `customer-cart-checkout` |
+| `orders-state-machine` | Máquina de estados (6 estados: PENDIENTE→CONFIRMADO→EN_PREPARACION→EN_CAMINO→ENTREGADO, más CANCELADO), transiciones validadas por rol, decremento/incremento atómico de stock, historial append-only | US-039 a US-044 | `customer-cart-checkout` |
+| `admin-dashboard` | Dashboard con métricas (recharts), gestión de usuarios (listar, editar rol, desactivar), gestión de pedidos con FSM, top productos, distribución por estado, configuración del sistema | US-051 a US-060, US-064, US-065 | `orders-state-machine`, `rbac-guard` |
 
 ---
 
-## FASE 6 — Panel Admin y UI Global
+## FASE 6 — Polish y Experiencia de Usuario
 
 | Change | Funcionalidad | Historias de Usuario | Dependencias |
 |--------|---------------|----------------------|--------------|
-| `admin-panel` | Dashboard con métricas (recharts), gestión de usuarios y roles, gestión de pedidos con FSM | US-049 a US-060, US-064 | `rbac-guard`, `orders-state-machine` |
-| `client-profile` | Ver/editar perfil propio, cambiar contraseña | US-061, US-062, US-063 | `rbac-guard` |
-| `ui-global` | Skeleton loaders, toasts, estados vacíos, modales de confirmación, responsive design | US-065, US-072 | Todos los anteriores |
+| `addresses-ui` | CRUD completo de direcciones de entrega desde el perfil del usuario: crear, listar, editar, eliminar, establecer predeterminada | US-024 a US-028 | `rbac-guard` |
+| `ui-global` | Skeleton loaders, toasts, estados vacíos, modales de confirmación, manejo global de errores HTTP, feedback de pago post-MercadoPago, responsive design | US-066, US-067, US-072 | Todos los anteriores |
 
 ---
 
@@ -97,16 +97,19 @@ auth-frontend                 │
       └── rbac-guard ←───────┘
               │
 categories-crud ← ingredients-crud ← products-crud
-                                        │
-addresses-crud ← cart-frontend ─────────┤
-                │
-                └── orders-create ← mercadopago-integration
-                            │
-orders-state-machine ←──────┘
-              │
-admin-panel ←┤
-              │
-client-profile ← ui-global
+                                         │
+                    ┌────────────────────┼────────────────────┐
+                    ▼                    ▼                    ▼
+          customer-catalog    customer-cart-checkout   addresses-ui (F6)
+                                        │                    │
+                    ┌───────────────────┼────┐               │
+                    ▼                   ▼    ▼               │
+          customer-orders   mercadopago   orders-state-machine
+                             -integration      │
+                                               ▼
+                                        admin-dashboard
+
+ui-global (depende de todos los anteriores)
 ```
 
 ---
@@ -127,13 +130,13 @@ client-profile ← ui-global
 | 10 | `categories-crud` | Media | EPIC 03 |
 | 11 | `ingredients-crud` | Media | EPIC 04 |
 | 12 | `products-crud` | Alta | EPIC 05 |
-| 13 | `addresses-crud` | Media | EPIC 07 |
-| 14 | `cart-frontend` | Alta | EPIC 08, EPIC 09 |
-| 15 | `orders-create` | Muy Alta | EPIC 10 |
-| 16 | `orders-state-machine` | Muy Alta | EPIC 11 |
-| 17 | `mercadopago-integration` | Muy Alta | EPIC 12 |
-| 18 | `admin-panel` | Alta | EPIC 13 |
-| 19 | `client-profile` | Baja | EPIC 06 |
+| 13 | `customer-catalog` | Alta | EPIC 05 |
+| 14 | `customer-cart-checkout` | Muy Alta | EPIC 08, EPIC 09, EPIC 10 |
+| 15 | `customer-orders` | Media | EPIC 13, EPIC 14 |
+| 16 | `mercadopago-integration` | Muy Alta | EPIC 11 |
+| 17 | `orders-state-machine` | Muy Alta | EPIC 12 |
+| 18 | `admin-dashboard` | Alta | EPIC 13, EPIC 15, EPIC 16, EPIC 17, EPIC 18 |
+| 19 | `addresses-ui` | Media | EPIC 07 |
 | 20 | `ui-global` | Media | Todas |
 
 ---
@@ -148,14 +151,19 @@ client-profile ← ui-global
 | EPIC 03 | Gestión de Categorías | categories-crud |
 | EPIC 04 | Gestión de Ingredientes y Alérgenos | ingredients-crud |
 | EPIC 05 | Gestión de Productos y Catálogo | products-crud |
-| EPIC 06 | Gestión del Perfil del Cliente | client-profile |
-| EPIC 07 | Gestión de Direcciones de Entrega | addresses-crud |
-| EPIC 08 | Carrito de Compras | cart-frontend |
-| EPIC 09 | Validaciones Pre-Checkout | cart-frontend |
-| EPIC 10 | Creación de Pedidos | orders-create |
-| EPIC 11 | Máquina de Estados del Pedido | orders-state-machine |
-| EPIC 12 | Integración MercadoPago | mercadopago-integration |
-| EPIC 13 | Panel de Administración | admin-panel |
+| EPIC 06 | Gestión del Perfil del Cliente | *(completado en fases anteriores — ProfilePage + ChangePasswordForm)* |
+| EPIC 07 | Gestión de Direcciones de Entrega | addresses-ui |
+| EPIC 08 | Carrito de Compras | customer-cart-checkout |
+| EPIC 09 | Validaciones Pre-Checkout | customer-cart-checkout |
+| EPIC 10 | Creación de Pedidos | customer-cart-checkout |
+| EPIC 11 | Integración MercadoPago | mercadopago-integration |
+| EPIC 12 | Máquina de Estados del Pedido | orders-state-machine |
+| EPIC 13 | Visualización de Pedidos y Dashboard | customer-orders, admin-dashboard |
+| EPIC 14 | Notificaciones y Feedback UX | customer-orders, ui-global |
+| EPIC 15 | Administración de Usuarios | admin-dashboard |
+| EPIC 16 | Gestión Avanzada de Catálogo (Admin) | admin-dashboard |
+| EPIC 17 | Panel de Métricas y Dashboard | admin-dashboard |
+| EPIC 18 | Configuración del Sistema | admin-dashboard |
 
 ---
 
@@ -194,7 +202,12 @@ El workflow es **fluido** — podés re-ejecutar cualquier paso, actualizar cual
 | `backend-config`, `db-setup` | fastapi-python, postgresql-database-engineering |
 | `auth-backend`, `auth-frontend` | jwt-security, fastapi-python |
 | `backend-patterns` | fastapi-python |
-| `products-crud`, `orders-create` | fastapi-python, postgresql-database-engineering |
-| `frontend-stores`, `cart-frontend` | zustand-state-management |
+| `products-crud` | fastapi-python, postgresql-database-engineering |
+| `customer-catalog` | react-dev, tailwindcss, food-ecommerce-ui |
+| `customer-cart-checkout` | react-dev, zustand-state-management, food-ecommerce-ui |
+| `customer-orders` | react-dev, food-ecommerce-ui |
 | `mercadopago-integration` | fastapi-python |
-| `admin-panel`, `ui-global` | react-dev, tailwindcss |
+| `orders-state-machine` | fastapi-python, postgresql-database-engineering |
+| `admin-dashboard` | react-dev, tailwind-design-system, dashboard-crud-page |
+| `addresses-ui` | react-dev |
+| `ui-global` | react-dev, tailwindcss |
