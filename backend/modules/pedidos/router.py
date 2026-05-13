@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.auth import get_current_user, require_permission
 from backend.core.database import get_db
+from backend.core.enums import OrderStatus
 from backend.core.exceptions import NotFoundError
 from backend.core.permissions import Permission
 from backend.modules.pedidos.schemas import PedidoCreate, PedidoUpdateStatus, PedidoRead, PedidoList
@@ -20,13 +21,15 @@ async def list_my_orders(
     db: Annotated[AsyncSession, Depends(get_db)],
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
+    estado: OrderStatus | None = Query(None, description="Filter by order status"),
 ):
     user_id = UUID(current_user["user_id"])
     repo = PedidoRepository(db)
     product_repo = ProductRepository(db)
     service = OrderService(repo, product_repo)
-    items = await service.list_by_user(user_id, skip=(page - 1) * size, limit=size)
-    total = len(items)
+    items, total = await service.list_by_user(
+        user_id, skip=(page - 1) * size, limit=size, status=estado
+    )
     return PedidoList(items=list(items), total=total, page=page, size=size)
 
 

@@ -21,7 +21,7 @@ const ProfilePage = () => {
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full" />
+        <div className="animate-spin h-10 w-10 border-4 border-[var(--brand)] border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -68,7 +68,7 @@ const ProfilePage = () => {
                   <button
                     onClick={() => sendVerification({ email: user.email })}
                     disabled={isSendingVerification}
-                    className="text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400"
+                    className="text-sm text-[var(--brand)] hover:text-[var(--brand-hover)] disabled:text-gray-400"
                   >
                     {isSendingVerification ? 'Enviando...' : 'Verificar Email'}
                   </button>
@@ -94,7 +94,7 @@ const ProfilePage = () => {
         </h2>
         <Link
           to="/orders"
-          className="inline-block text-blue-600 hover:text-blue-800 font-medium"
+          className="inline-block text-[var(--brand)] hover:text-[var(--brand-hover)] font-medium"
         >
           Ver mis pedidos &rarr;
         </Link>

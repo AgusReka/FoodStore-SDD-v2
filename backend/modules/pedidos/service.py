@@ -114,5 +114,9 @@ class OrderService(BaseService[Order]):
         updated = await self.repository.update(order_id, status=new_status)
         return updated
 
-    async def list_by_user(self, user_id: UUID, skip: int = 0, limit: int = 20) -> list[Order]:
-        return await self.repository.get_by_user(user_id, skip, limit)
+    async def list_by_user(
+        self, user_id: UUID, skip: int = 0, limit: int = 20, status: OrderStatus | None = None
+    ) -> tuple[list[Order], int]:
+        items = await self.repository.get_by_user(user_id, skip, limit, status)
+        total = await self.repository.count_by_user(user_id, status)
+        return items, total

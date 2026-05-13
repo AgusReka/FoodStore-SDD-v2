@@ -1,12 +1,19 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@shared/hooks/useAuth'
 import RegisterForm from '@features/auth/RegisterForm'
 
 const RegisterPage = () => {
   const navigate = useNavigate()
+  const { login } = useAuth()
 
-  const handleRegisterSuccess = (email: string) => {
-    const query = email ? `?email=${encodeURIComponent(email)}` : ''
-    navigate(`/login${query}`, { replace: true })
+  const handleRegisterSuccess = async (email: string, password: string) => {
+    try {
+      await login(email, password)
+      navigate('/', { replace: true })
+    } catch {
+      const query = email ? `?email=${encodeURIComponent(email)}` : ''
+      navigate(`/login${query}`, { replace: true })
+    }
   }
 
   return (

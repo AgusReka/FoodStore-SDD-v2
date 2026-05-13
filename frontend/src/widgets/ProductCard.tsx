@@ -1,6 +1,8 @@
 import { useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { Product } from '@entities/product'
 import { useCartStore } from '@shared/stores/cartStore'
+import { useAuthStore } from '@shared/stores/authStore'
 
 interface ProductCardProps {
   product: Product
@@ -41,17 +43,23 @@ function StockBadge({ product }: { product: Product }) {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
+  const accessToken = useAuthStore((s) => s.accessToken)
   const isAvailable = product.isAvailable && (product.stockDisponible == null || product.stockDisponible > 0)
 
   const handleAddToCart = useCallback(() => {
+    if (!accessToken) {
+      navigate(`/login?redirect=/productos/${product.id}`)
+      return
+    }
     addItem({
       productId: product.id,
       name: product.name,
       price: product.price,
       imageUrl: product.imageUrl,
     })
-  }, [addItem, product])
+  }, [addItem, product, accessToken, navigate])
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -105,7 +113,7 @@ export function ProductCard({ product }: ProductCardProps) {
             className={`
               px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
               ${isAvailable
-                ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+                ? 'bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] active:bg-[var(--brand-hover)]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }
             `}

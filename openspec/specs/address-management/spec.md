@@ -1,7 +1,8 @@
 # address-management Specification
 
 ## Purpose
-TBD - created by archiving change backend-patterns. Update Purpose after archive.
+Manage user delivery addresses with CRUD operations and default address selection.
+
 ## Requirements
 ### Requirement: Create address
 
@@ -10,11 +11,11 @@ The system SHALL support creating a delivery address for the authenticated user.
 **Scenarios:**
 
 #### Scenario: Create address with valid data
-- **WHEN** a POST request is sent to `/api/v1/direcciones` with `calle`, `ciudad`, `codigo_postal`, and optional `es_principal`
+- **WHEN** a POST request is sent to `/api/v1/direcciones` with `street`, `city`, `postal_code`, `street_number`, and optional `is_primary`
 - **THEN** a new address SHALL be created and returned with status 201
 
-#### Scenario: Create address marked as principal
-- **WHEN** a POST request is sent with `es_principal: true`
+#### Scenario: Create address marked as primary
+- **WHEN** a POST request is sent with `is_primary: true`
 - **THEN** the new address SHALL be marked as the user's default
 - **AND** any previous default address SHALL be unmarked
 
@@ -26,7 +27,7 @@ The system SHALL support listing all addresses for the authenticated user.
 
 #### Scenario: List my addresses
 - **WHEN** a GET request is sent to `/api/v1/direcciones`
-- **THEN** all addresses for the current user SHALL be returned
+- **THEN** all addresses for the current user SHALL be returned within a `DireccionList` envelope
 
 ### Requirement: Update address
 
@@ -35,11 +36,11 @@ The system SHALL support updating address fields and changing the default addres
 **Scenarios:**
 
 #### Scenario: Update address fields
-- **WHEN** a PATCH request is sent to `/api/v1/direcciones/{id}` with updated fields
+- **WHEN** a PATCH request is sent to `/api/v1/direcciones/{id}` with updated fields including `street_number`
 - **THEN** the address SHALL be updated
 
-#### Scenario: Set address as principal
-- **WHEN** a PATCH request sets `es_principal: true` on an existing address
+#### Scenario: Set address as primary
+- **WHEN** a PATCH request sets `is_primary: true` on an existing address
 - **THEN** that address SHALL become the default
 - **AND** any previous default SHALL be unmarked
 

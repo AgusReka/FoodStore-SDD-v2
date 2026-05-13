@@ -73,3 +73,7 @@ The system SHALL support listing orders for the authenticated user with paginati
 - **WHEN** a GET request is sent to `/api/v1/pedidos?estado=pendiente`
 - **THEN** only orders with `pendiente` status SHALL be returned
 
+#### Scenario: Filter with invalid status
+- **WHEN** a GET request is sent to `/api/v1/pedidos?estado=invalid_status`
+- **THEN** the system SHALL return a 422 Validation Error
+

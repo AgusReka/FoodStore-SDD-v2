@@ -1,6 +1,8 @@
 import { useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { Product } from '@entities/product'
 import { useCartStore } from '@shared/stores/cartStore'
+import { useAuthStore } from '@shared/stores/authStore'
 
 interface ProductDetailProps {
   product: Product
@@ -45,17 +47,23 @@ function StockIndicator({ product }: { product: Product }) {
 }
 
 export function ProductDetail({ product }: ProductDetailProps) {
+  const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
+  const accessToken = useAuthStore((s) => s.accessToken)
   const isAvailable = product.isAvailable && (product.stockDisponible == null || product.stockDisponible > 0)
 
   const handleAddToCart = useCallback(() => {
+    if (!accessToken) {
+      navigate(`/login?redirect=/productos/${product.id}`)
+      return
+    }
     addItem({
       productId: product.id,
       name: product.name,
       price: product.price,
       imageUrl: product.imageUrl,
     })
-  }, [addItem, product])
+  }, [addItem, product, accessToken, navigate])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -115,7 +123,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
             className={`
               w-full py-3 px-6 rounded-xl text-base font-semibold transition-colors
               ${isAvailable
-                ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+                ? 'bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }
             `}

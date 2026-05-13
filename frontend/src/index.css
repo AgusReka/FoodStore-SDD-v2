@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --brand: #ff7a00;
+    --brand-hover: #ff8a1f;
+    --brand-soft: #ffe9d5;
+    --ink-1: #15110c;
+    --ink-2: #4a4339;
+    --ink-3: #8a8275;
+    --bg: #faf8f4;
+    --surface: #f4f1ec;
+    --shadow-sm: 0 2px 8px rgba(20, 16, 12, 0.05), 0 1px 2px rgba(20, 16, 12, 0.04);
+    --shadow-md: 0 8px 28px rgba(20, 16, 12, 0.06), 0 2px 6px rgba(20, 16, 12, 0.04);
+    --r-sm: 12px;
+    --r-md: 18px;
+    --r-lg: 24px;
+    --r-pill: 999px;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

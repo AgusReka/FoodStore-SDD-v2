@@ -1,7 +1,7 @@
 """Order repository."""
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from backend.core.enums import OrderStatus
@@ -13,10 +13,20 @@ class PedidoRepository(BaseRepository[Order]):
     def __init__(self, session):
         super().__init__(Order, session)
 
-    async def get_by_user(self, user_id: UUID, skip: int = 0, limit: int = 20) -> list[Order]:
-        stmt = select(Order).where(Order.user_id == user_id).offset(skip).limit(limit)
+    async def get_by_user(self, user_id: UUID, skip: int = 0, limit: int = 20, status: OrderStatus | None = None) -> list[Order]:
+        stmt = select(Order).where(Order.user_id == user_id)
+        if status:
+            stmt = stmt.where(Order.status == status)
+        stmt = stmt.offset(skip).limit(limit).order_by(Order.created_at.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def count_by_user(self, user_id: UUID, status: OrderStatus | None = None) -> int:
+        stmt = select(func.count()).select_from(Order).where(Order.user_id == user_id)
+        if status:
+            stmt = stmt.where(Order.status == status)
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
 
     async def get_by_status(self, estado: OrderStatus, skip: int = 0, limit: int = 20) -> list[Order]:
         stmt = select(Order).where(Order.status == estado).offset(skip).limit(limit)

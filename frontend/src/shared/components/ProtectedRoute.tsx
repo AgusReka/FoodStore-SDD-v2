@@ -25,7 +25,7 @@ const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
   if (isLoading || profileLoading || (accessToken && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full" />
+        <div className="animate-spin h-10 w-10 border-4 border-[var(--brand)] border-t-transparent rounded-full" />
       </div>
     )
   }

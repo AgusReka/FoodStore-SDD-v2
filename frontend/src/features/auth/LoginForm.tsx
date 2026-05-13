@@ -1,24 +1,16 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuthStore } from '@shared/stores/authStore'
+import { useAuth } from '@shared/hooks/useAuth'
 import { validateRequired, validateEmail } from '@shared/utils/validation'
 
 const LoginForm = () => {
-  const login = useAuthStore((s) => s.login)
-  const isLoading = useAuthStore((s) => s.isLoading)
-  const hasError = useAuthStore((s) => s.hasError)
+  const { login, isLoading } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({})
   const [apiError, setApiError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (hasError) {
-      setPassword('')
-      setApiError('Email o contraseña incorrectos')
-    }
-  }, [hasError])
 
   const validate = (): boolean => {
     const errors: Record<string, string | null> = {
@@ -35,8 +27,10 @@ const LoginForm = () => {
     if (!validate()) return
     try {
       await login(email, password)
-    } catch {
-      // hasError is set by the store on failure
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al iniciar sesión'
+      setApiError(message)
+      setPassword('')
     }
   }
 
@@ -60,7 +54,7 @@ const LoginForm = () => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent placeholder-gray-400"
             placeholder="tu@email.com"
             disabled={isLoading}
             autoComplete="email"
@@ -72,21 +66,39 @@ const LoginForm = () => {
           <label htmlFor="login-password" className="block text-gray-700 text-sm font-medium mb-1">
             Contraseña
           </label>
-          <input
-            id="login-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
-            placeholder="••••••••"
-            disabled={isLoading}
-            autoComplete="current-password"
-          />
+          <div className="relative">
+            <input
+              id="login-password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent placeholder-gray-400 pr-10"
+              placeholder="••••••••"
+              disabled={isLoading}
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
           {fieldErrors.password && <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>}
         </div>
 
         <div className="text-right">
-          <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
+          <Link to="/forgot-password" className="text-sm text-[var(--brand)] hover:text-[var(--brand-hover)]">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
@@ -94,7 +106,7 @@ const LoginForm = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-semibold py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isLoading && (
             <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -108,7 +120,7 @@ const LoginForm = () => {
 
       <p className="mt-6 text-center text-sm text-gray-600">
         ¿No tenés cuenta?{' '}
-        <Link to="/register" className="text-blue-600 hover:text-blue-800 font-medium">
+        <Link to="/register" className="text-[var(--brand)] hover:text-[var(--brand-hover)] font-medium">
           Registrate
         </Link>
       </p>
