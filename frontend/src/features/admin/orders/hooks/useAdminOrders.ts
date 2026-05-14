@@ -20,6 +20,8 @@ export interface PaymentRead {
   amount: number
   currency: string
   mp_payment_id: string | null
+  mp_preference_id: string | null
+  mp_init_point: string | null
   created_at: string
   updated_at: string | null
 }

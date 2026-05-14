@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCartStore } from '@shared/stores/cartStore'
 import { useAuthStore } from '@shared/stores/authStore'
 import { useUiStore } from '@shared/stores/uiStore'
-import { useBreakpoint } from '@shared/hooks/useBreakpoint'
 import { SearchPalette } from '@widgets/SearchPalette'
 
 /* ============================================================
@@ -92,18 +91,13 @@ export default function Header() {
     setMobileMenuOpen(false)
   }, [location.pathname])
 
-  const { isMobile } = useBreakpoint()
   const toggleCart = useUiStore((s) => s.toggleCart)
   const searchOpen = useUiStore((s) => s.searchOpen)
   const setSearchOpen = useUiStore((s) => s.setSearchOpen)
 
   const handleCartClick = useCallback(() => {
-    if (isMobile) {
-      navigate('/cart')
-    } else {
-      toggleCart()
-    }
-  }, [isMobile, navigate, toggleCart])
+    toggleCart()
+  }, [toggleCart])
 
   const handleLogout = useCallback(async () => {
     await logout()

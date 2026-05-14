@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useOrderDetail, useOrderHistory } from '@features/orders/hooks/useOrders'
 import { OrderTimeline } from '@features/orders/OrderTimeline'
@@ -100,9 +101,49 @@ const OrderDetailPage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const isNewOrder = searchParams.get('new') === 'true'
+  const mpError = searchParams.get('mp-error') === 'true'
 
   const { data: order, isLoading, isError, refetch } = useOrderDetail(id)
   const { data: history } = useOrderHistory(id)
+
+  const [isPolling, setIsPolling] = useState(false)
+  const pollAttempts = useRef(0)
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Poll for pending MP payments after returning from MP redirect
+  useEffect(() => {
+    if (!order?.payment) return
+    if (order.payment.payment_method !== 'mercadopago') return
+    if (order.payment.status !== 'pendiente') return
+
+    setIsPolling(true)
+    pollAttempts.current = 0
+
+    pollTimer.current = setInterval(async () => {
+      pollAttempts.current++
+
+      if (pollAttempts.current >= 10) {
+        if (pollTimer.current) clearInterval(pollTimer.current)
+        setIsPolling(false)
+        return
+      }
+
+      const result = await refetch()
+      const newStatus = result.data?.payment?.status
+      if (newStatus && newStatus !== 'pendiente') {
+        if (pollTimer.current) clearInterval(pollTimer.current)
+        setIsPolling(false)
+      }
+    }, 3000)
+
+    return () => {
+      if (pollTimer.current) {
+        clearInterval(pollTimer.current)
+        pollTimer.current = null
+      }
+      setIsPolling(false)
+    }
+  }, [order?.id, order?.payment?.status, order?.payment?.payment_method, refetch])
 
   // Post-checkout success banner — remove the query param after showing
   if (isNewOrder && order && !isLoading) {
@@ -152,6 +193,75 @@ const OrderDetailPage = () => {
         </svg>
         Volver a mis pedidos
       </button>
+
+      {/* MP error banner */}
+      {order && mpError && (
+        <div
+          style={{
+            background: 'rgba(230,57,70,0.08)',
+            border: '1px solid rgba(230,57,70,0.2)',
+            borderRadius: 'var(--r-lg)',
+            padding: 20,
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            animation: 'float-up 0.5s var(--ease-spring)',
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: 'rgba(230,57,70,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--warm-red)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div>
+            <p style={{ fontWeight: 600, fontSize: 15, color: 'var(--warm-red)', margin: 0 }}>
+              Pago con Mercado Pago no completado
+            </p>
+            <p style={{ fontSize: 13, color: '#7A2D2D', margin: '2px 0 0' }}>
+              Usá el botón "Pagar ahora" de abajo para intentar de nuevo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const url = new URL(window.location.href)
+              url.searchParams.delete('mp-error')
+              window.history.replaceState({}, '', url.pathname)
+              window.location.reload()
+            }}
+            style={{
+              marginLeft: 'auto',
+              padding: '6px 14px',
+              borderRadius: 999,
+              border: '1px solid rgba(230,57,70,0.3)',
+              background: 'transparent',
+              color: 'var(--warm-red)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            Entendido
+          </button>
+        </div>
+      )}
 
       {/* Success banner (post-checkout) */}
       {order && isNewOrder && (
@@ -513,11 +623,44 @@ const OrderDetailPage = () => {
 
           {/* Payment */}
           {order.payment ? (
-            <PaymentStatus
-              method={order.payment.payment_method}
-              status={order.payment.status}
-              amount={order.payment.amount}
-            />
+            <>
+              <PaymentStatus
+                method={order.payment.payment_method}
+                status={order.payment.status}
+                amount={order.payment.amount}
+                paymentId={order.payment.id}
+                mpInitPoint={order.payment.mp_init_point}
+              />
+              {isPolling && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: '10px 16px',
+                    fontSize: 13,
+                    color: 'var(--ink-3)',
+                    background: 'var(--bg-elevated)',
+                    borderRadius: 'var(--r-lg)',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  <div
+                    className="animate-spin"
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: '50%',
+                      border: '2px solid var(--line)',
+                      borderTopColor: 'var(--brand)',
+                      flexShrink: 0,
+                    }}
+                  />
+                  Verificando pago…
+                </div>
+              )}
+            </>
           ) : (
             <div
               style={{

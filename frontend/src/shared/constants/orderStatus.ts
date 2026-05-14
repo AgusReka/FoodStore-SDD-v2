@@ -1,5 +1,6 @@
 export type OrderStatus =
   | 'pendiente'
+  | 'pending_mp'
   | 'confirmado'
   | 'preparando'
   | 'enviado'
@@ -8,6 +9,7 @@ export type OrderStatus =
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pendiente: 'Pendiente',
+  pending_mp: 'Pendiente de pago',
   confirmado: 'Confirmado',
   preparando: 'Preparando',
   enviado: 'Enviado',
@@ -17,6 +19,7 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const STATUS_ORDER: Record<OrderStatus, number> = {
   pendiente: 0,
+  pending_mp: 0,
   confirmado: 1,
   preparando: 2,
   enviado: 3,
@@ -26,6 +29,7 @@ export const STATUS_ORDER: Record<OrderStatus, number> = {
 
 export const STATUS_STYLES: Record<string, string> = {
   pendiente: 'bg-yellow-100 text-yellow-800',
+  pending_mp: 'bg-orange-100 text-orange-800',
   confirmado: 'bg-blue-100 text-blue-800',
   preparando: 'bg-purple-100 text-purple-800',
   enviado: 'bg-cyan-100 text-cyan-800',
@@ -44,6 +48,7 @@ export const STATUS_TIMELINE_STEPS: { key: OrderStatus; label: string }[] = [
 export function getValidTransitions(status: OrderStatus): OrderStatus[] {
   const transitions: Record<OrderStatus, OrderStatus[]> = {
     pendiente: ['confirmado', 'cancelado'],
+    pending_mp: ['confirmado', 'cancelado'],
     confirmado: ['preparando', 'cancelado'],
     preparando: ['enviado'],
     enviado: ['entregado'],

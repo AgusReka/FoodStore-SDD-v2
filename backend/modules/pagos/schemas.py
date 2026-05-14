@@ -25,6 +25,8 @@ class PagoRead(BaseModel):
     amount: float
     currency: str
     mp_payment_id: str | None = None
+    mp_preference_id: str | None = None
+    mp_init_point: str | None = None
     created_at: datetime
     updated_at: datetime | None = None
 

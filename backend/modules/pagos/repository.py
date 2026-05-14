@@ -21,3 +21,14 @@ class PagoRepository(BaseRepository[Payment]):
         stmt = select(Payment).where(Payment.status == estado).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_by_mp_payment_id(self, mp_payment_id: str) -> Payment | None:
+        stmt = select(Payment).where(Payment.mp_payment_id == mp_payment_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    async def get_by_mp_preference(self, mp_preference_id: str) -> Payment | None:
+        """Find payment by MP preference ID (for idempotency in checkout flow)."""
+        stmt = select(Payment).where(Payment.mp_preference_id == mp_preference_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()

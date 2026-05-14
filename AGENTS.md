@@ -108,6 +108,7 @@ Estas skills están instaladas localmente en `.agents/skills/` y disponibles par
 | **judgment-day** | Revisión adversarial paralela | Al decir "judgment day", "revisión", "que lo juzguen", "doble review" | `.agents/skills/judgment-day/` |
 | **skill-creator** | Crear nuevas skills | Al querer documentar patrones o crear nuevas instrucciones para el agente | `.agents/skills/skill-creator/` |
 | **find-skills** | Descubrir e instalar skills del ecosistema | Al preguntar "cómo hago X", "hay una skill para X", o querer extender capacidades | `.agents/skills/find-skills/` |
+| **mercadopago-integration** | Arquitectura de checkout con Mercado Pago (modo seguro: interfaces provider-agnostic, mocks, schemas, UX states) | Al planificar o implementar la integración con Mercado Pago durante el change `mercadopago-integration` | `.agents/skills/mercadopago-integration/` |
 
 Para cargar una skill durante una tarea, usá el comando `/skill` seguido del nombre de la skill.
 

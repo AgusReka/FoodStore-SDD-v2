@@ -26,6 +26,10 @@ class OrderStateMachine:
             (OrderStatus.CONFIRMADO, [SideEffect.DEDUCT_STOCK]),
             (OrderStatus.CANCELADO, [SideEffect.NONE]),
         ],
+        OrderStatus.PENDING_MP: [
+            (OrderStatus.CONFIRMADO, [SideEffect.DEDUCT_STOCK]),
+            (OrderStatus.CANCELADO, [SideEffect.NONE]),
+        ],
         OrderStatus.CONFIRMADO: [
             (OrderStatus.PREPARANDO, [SideEffect.NONE]),
             (OrderStatus.CANCELADO, [SideEffect.RESTORE_STOCK]),

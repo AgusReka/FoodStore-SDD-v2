@@ -25,6 +25,12 @@ class UnauthorizedError(Exception):
         self.code = "UNAUTHORIZED"
 
 
+class BadRequestError(Exception):
+    def __init__(self, detail: str = "Bad request"):
+        self.detail = detail
+        self.code = "BAD_REQUEST"
+
+
 class ValidationError(Exception):
     def __init__(self, detail: str):
         self.detail = detail

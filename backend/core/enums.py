@@ -9,6 +9,7 @@ class UserRole(str, enum.Enum):
 
 class OrderStatus(str, enum.Enum):
     PENDIENTE = "pendiente"
+    PENDING_MP = "pending_mp"
     CONFIRMADO = "confirmado"
     PREPARANDO = "preparando"
     ENVIADO = "enviado"

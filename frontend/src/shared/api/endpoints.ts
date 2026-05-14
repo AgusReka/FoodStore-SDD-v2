@@ -8,6 +8,7 @@ const CATEGORIES = '/categorias'
 const INGREDIENTS = '/ingredientes'
 const ORDERS = '/pedidos'
 const PAYMENTS = '/pagos'
+const CHECKOUT = '/checkout'
 const ADDRESSES = '/direcciones'
 const ADMIN = '/admin'
 const HEALTH = '/health'
@@ -54,6 +55,13 @@ export const ENDPOINTS = {
   PAYMENTS_CREATE: `${PAYMENTS}/`,
   PAYMENTS_DETAIL: (id: string | number) => `${PAYMENTS}/${id}`,
   PAYMENTS_UPDATE_STATUS: (id: string | number) => `${PAYMENTS}/${id}/status`,
+  PAYMENTS_MP_CREATE_PREFERENCE: `${PAYMENTS}/mercadopago/create-preference`,
+
+  // Mercado Pago — retry preference for existing payments
+  PAYMENTS_MP_RETRY_PREFERENCE: `${PAYMENTS}/mercadopago/retry-preference`,
+
+  // Checkout (MP redirect flow - deferred order creation)
+  CHECKOUT_MP_INIT: `${CHECKOUT}/mp-init`,
 
   // Addresses
   ADDRESSES_LIST: `${ADDRESSES}/`,
@@ -72,3 +80,6 @@ export const ENDPOINTS = {
   HEALTH_READY: `${HEALTH}/ready`,
   HEALTH_LIVE: `${HEALTH}/live`,
 } as const
+
+// Convenience named exports for endpoint constants used outside the ENDPOINTS object
+export const CHECKOUT_MP_INIT = `${CHECKOUT}/mp-init`

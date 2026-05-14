@@ -27,6 +27,7 @@ import backend.modules.direcciones.model
 import backend.modules.ingredientes.model
 import backend.modules.pedidos.model
 import backend.modules.pagos.model
+import backend.modules.checkout.model
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

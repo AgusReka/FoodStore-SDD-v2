@@ -6,13 +6,13 @@ import ProductDetailPage from '@pages/ProductDetailPage'
 import LoginPage from '@pages/LoginPage'
 import RegisterPage from '@pages/RegisterPage'
 import ProfilePage from '@pages/ProfilePage'
-import CartPage from '@pages/CartPage'
 import CheckoutPage from '@pages/CheckoutPage'
 import OrdersPage from '@pages/OrdersPage'
 import OrderDetailPage from '@pages/OrderDetailPage'
 import ForgotPasswordPage from '@pages/ForgotPasswordPage'
 import ResetPasswordPage from '@pages/ResetPasswordPage'
 import VerifyEmailPage from '@pages/VerifyEmailPage'
+import PaymentReturnPage from '@pages/PaymentReturnPage'
 import AdminPage from '@pages/AdminPage'
 import AdminDashboard from '@pages/AdminDashboard'
 import NotFound from '@pages/NotFound'
@@ -35,7 +35,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/cart" element={<CartPage />} />
+
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute/>}>
@@ -43,6 +43,7 @@ const App = () => {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
+          <Route path="/mp/return" element={<PaymentReturnPage />} />
         </Route>
       </Route>
 

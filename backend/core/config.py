@@ -53,10 +53,16 @@ class Settings(BaseSettings):
         description="Enable debug mode",
     )
 
-    # Frontend URL (for email links)
+    # Frontend URL
     FRONTEND_URL: str = Field(
         default="http://localhost:5173",
         description="Frontend base URL for building links in emails",
+    )
+
+    # Backend API base URL (for building MP return URLs)
+    API_BASE_URL: str = Field(
+        default="http://localhost:8000",
+        description="Backend API base URL for building MP return URLs",
     )
 
     # Email (SMTP)
@@ -88,6 +94,29 @@ class Settings(BaseSettings):
         default=False,
         description="Use SSL/TLS for email",
     )
+
+    # Mercado Pago
+    MERCADOPAGO_ACCESS_TOKEN: str = Field(
+        default="",
+        description="Mercado Pago access token (TEST or PROD) for API authentication",
+    )
+    MERCADOPAGO_PUBLIC_KEY: str = Field(
+        default="",
+        description="Mercado Pago public key (TEST or PROD) for frontend SDK initialization",
+    )
+    MERCADOPAGO_WEBHOOK_SECRET: str = Field(
+        default="",
+        description="Secret key for validating Mercado Pago IPN X-Signature headers",
+    )
+    MERCADOPAGO_WEBHOOK_URL: str = Field(
+        default="",
+        description="Public URL where Mercado Pago sends IPN notifications",
+    )
+
+    @property
+    def mercadopago_configured(self) -> bool:
+        """Check if Mercado Pago is fully configured."""
+        return bool(self.MERCADOPAGO_ACCESS_TOKEN)
 
     @property
     def mail_configured(self) -> bool:

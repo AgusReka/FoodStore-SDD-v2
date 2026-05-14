@@ -29,6 +29,18 @@ class TestValidTransitions:
         assert result.error is None
         assert result.side_effects == [SideEffect.NONE]
 
+    def test_pending_mp_to_confirmado(self, machine: OrderStateMachine):
+        result = machine.transition(OrderStatus.PENDING_MP, OrderStatus.CONFIRMADO)
+        assert result.allowed is True
+        assert result.error is None
+        assert SideEffect.DEDUCT_STOCK in result.side_effects
+
+    def test_pending_mp_to_cancelado(self, machine: OrderStateMachine):
+        result = machine.transition(OrderStatus.PENDING_MP, OrderStatus.CANCELADO)
+        assert result.allowed is True
+        assert result.error is None
+        assert result.side_effects == [SideEffect.NONE]
+
     def test_confirmado_to_preparando(self, machine: OrderStateMachine):
         result = machine.transition(OrderStatus.CONFIRMADO, OrderStatus.PREPARANDO)
         assert result.allowed is True
@@ -59,6 +71,10 @@ class TestInvalidTransitions:
             (OrderStatus.PENDIENTE, OrderStatus.ENVIADO),
             (OrderStatus.PENDIENTE, OrderStatus.ENTREGADO),
             (OrderStatus.PENDIENTE, OrderStatus.PREPARANDO),
+            (OrderStatus.PENDING_MP, OrderStatus.ENVIADO),
+            (OrderStatus.PENDING_MP, OrderStatus.ENTREGADO),
+            (OrderStatus.PENDING_MP, OrderStatus.PREPARANDO),
+            (OrderStatus.PENDING_MP, OrderStatus.PENDIENTE),
             (OrderStatus.CONFIRMADO, OrderStatus.ENTREGADO),
             (OrderStatus.CONFIRMADO, OrderStatus.ENVIADO),
             (OrderStatus.PREPARANDO, OrderStatus.CONFIRMADO),
@@ -110,6 +126,15 @@ class TestSideEffects:
         assert SideEffect.DEDUCT_STOCK in result.side_effects
         assert SideEffect.RESTORE_STOCK not in result.side_effects
 
+    def test_deduct_stock_on_pending_mp_confirm(self, machine: OrderStateMachine):
+        result = machine.transition(OrderStatus.PENDING_MP, OrderStatus.CONFIRMADO)
+        assert SideEffect.DEDUCT_STOCK in result.side_effects
+        assert SideEffect.RESTORE_STOCK not in result.side_effects
+
+    def test_no_stock_on_pending_mp_cancel(self, machine: OrderStateMachine):
+        result = machine.transition(OrderStatus.PENDING_MP, OrderStatus.CANCELADO)
+        assert result.side_effects == [SideEffect.NONE]
+
     def test_restore_stock_on_cancel_from_confirmado(self, machine: OrderStateMachine):
         result = machine.transition(OrderStatus.CONFIRMADO, OrderStatus.CANCELADO)
         assert SideEffect.RESTORE_STOCK in result.side_effects
@@ -139,6 +164,12 @@ class TestGetValidTransitions:
 
     def test_pendiente_transitions(self, machine: OrderStateMachine):
         transitions = machine.get_valid_transitions(OrderStatus.PENDIENTE)
+        assert OrderStatus.CONFIRMADO in transitions
+        assert OrderStatus.CANCELADO in transitions
+        assert len(transitions) == 2
+
+    def test_pending_mp_transitions(self, machine: OrderStateMachine):
+        transitions = machine.get_valid_transitions(OrderStatus.PENDING_MP)
         assert OrderStatus.CONFIRMADO in transitions
         assert OrderStatus.CANCELADO in transitions
         assert len(transitions) == 2

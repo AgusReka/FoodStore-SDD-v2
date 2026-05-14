@@ -48,18 +48,42 @@ class PagoService(BaseService[Payment]):
         updated = await self.repository.update(payment_id, status=new_status)
 
         if new_status == PaymentStatus.APROBADO:
-            try:
-                product_repo = ProductRepository(self.pedido_repo.session)
-                order_service = OrderService(self.pedido_repo, product_repo)
-                await order_service.update_status(
-                    payment.order_id,
-                    OrderStatus.CONFIRMADO,
-                    reason="Payment approved",
-                )
-            except Exception:
-                logger.warning(
-                    "Could not transition order %s to CONFIRMADO after payment approval",
-                    payment.order_id,
-                )
+            await self._advance_order_to_confirmed(payment.order_id)
 
         return updated
+
+    async def process_status_update(
+        self, payment_id: UUID, new_status: PaymentStatus, **extra_fields
+    ) -> Payment:
+        """Update payment status with optional extra fields (used by webhook flow).
+
+        This is a public method callable from the MP webhook handler.
+        When status becomes APROBADO, the associated order is transitioned
+        to CONFIRMADO automatically.
+        """
+        payment = await self.repository.get(payment_id)
+        if not payment:
+            raise NotFoundError(f"Payment {payment_id} not found")
+
+        updated = await self.repository.update(payment_id, status=new_status, **extra_fields)
+
+        if new_status == PaymentStatus.APROBADO:
+            await self._advance_order_to_confirmed(payment.order_id)
+
+        return updated
+
+    async def _advance_order_to_confirmed(self, order_id: UUID) -> None:
+        """Advance an order to CONFIRMADO status after payment approval."""
+        try:
+            product_repo = ProductRepository(self.pedido_repo.session)
+            order_service = OrderService(self.pedido_repo, product_repo)
+            await order_service.update_status(
+                order_id,
+                OrderStatus.CONFIRMADO,
+                reason="Payment approved",
+            )
+        except Exception:
+            logger.warning(
+                "Could not transition order %s to CONFIRMADO after payment approval",
+                order_id,
+            )

@@ -20,7 +20,8 @@ class OrderService(BaseService[Order]):
         self.state_machine = OrderStateMachine()
 
     async def create_order(
-        self, user_id: UUID, items: list[dict], address_id: UUID | None = None
+        self, user_id: UUID, items: list[dict], address_id: UUID | None = None,
+        status: OrderStatus | None = None,
     ) -> Order:
         total = 0.0
         order_items_data = []
@@ -48,11 +49,15 @@ class OrderService(BaseService[Order]):
                 "subtotal": subtotal,
             })
 
-        order = await self.repository.create(
-            user_id=user_id,
-            address_id=address_id,
-            total=total,
-        )
+        order_kwargs = {
+            "user_id": user_id,
+            "address_id": address_id,
+            "total": total,
+        }
+        if status is not None:
+            order_kwargs["status"] = status
+
+        order = await self.repository.create(**order_kwargs)
 
         for item_data in order_items_data:
             self.repository.session.add(

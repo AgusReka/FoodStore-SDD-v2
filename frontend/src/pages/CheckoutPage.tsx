@@ -6,7 +6,7 @@ import { usePaymentStore } from '@shared/stores/paymentStore'
 import { useBreakpoint } from '@shared/hooks/useBreakpoint'
 import { get, post } from '@shared/api/client'
 import type { PaginatedResponse } from '@shared/api/client'
-import { ENDPOINTS } from '@shared/api/endpoints'
+import { ENDPOINTS, CHECKOUT_MP_INIT } from '@shared/api/endpoints'
 import { CONFIG } from '@shared/config/brand'
 import { TipSelector } from '@widgets/TipSelector'
 import { ShippingBar } from '@widgets/ShippingBar'
@@ -69,11 +69,13 @@ const CheckoutPage = () => {
   const [stockErrors, setStockErrors] = useState<string[]>([])
   const [currentStep, setCurrentStep] = useState<Step>('entrega')
   const [tip, setTip] = useState(10)
+  const [isMpRedirecting, setIsMpRedirecting] = useState(false)
+  const [paymentStep, setPaymentStep] = useState<'idle' | 'creating' | 'redirecting' | 'done'>('idle')
 
   // Redirect to cart if empty
   useEffect(() => {
     if (items.length === 0) {
-      navigate('/cart', { replace: true })
+      navigate('/', { replace: true })
     }
   }, [items, navigate])
 
@@ -129,7 +131,7 @@ const CheckoutPage = () => {
     },
   })
 
-  const isProcessing = orderMutation.isPending || paymentMutation.isPending
+  const isProcessing = orderMutation.isPending || paymentMutation.isPending || isMpRedirecting
 
   // Calculate fees
   const deliveryFee = total >= CONFIG.freeDeliveryAt ? 0 : CONFIG.deliveryFee
@@ -177,6 +179,41 @@ const CheckoutPage = () => {
     setOrderError(null)
     setStockErrors([])
 
+    if (paymentMethod === 'mercadopago') {
+      // MP flow: create Order + Payment immediately via mp-init, then redirect
+      setIsMpRedirecting(true)
+      setPaymentStep('redirecting')
+      try {
+        const itemsPayload = items.map((item) => ({
+          product_id: item.productId,
+          quantity: item.quantity,
+        }))
+        const response = await post<{ init_point: string }>(
+          CHECKOUT_MP_INIT,
+          {
+            items: itemsPayload,
+            direccion_id: selectedAddressId,
+          }
+        )
+        const { init_point } = response.data
+        // No limpiamos el carrito acá — si el usuario vuelve sin pagar
+        // (mp-return/failure) queremos que el carrito siga intacto.
+        // El carrito se limpia al llegar a la página de detalle de orden
+        // cuando el pago fue exitoso.
+        // Solo reseteamos el estado de pago.
+        resetPayment()
+        window.location.href = init_point
+        return
+      } catch {
+        setIsMpRedirecting(false)
+        setPaymentStep('idle')
+        setOrderError('Error al iniciar el pago con Mercado Pago. Intentá de nuevo más tarde.')
+        return
+      }
+    }
+
+    // Direct payment methods (efectivo / transferencia): create order + payment
+    setPaymentStep('creating')
     try {
       const order = await orderMutation.mutateAsync()
       await paymentMutation.mutateAsync({ pedido_id: order.id })
@@ -184,6 +221,7 @@ const CheckoutPage = () => {
       resetPayment()
       navigate(`/orders/${order.id}?new=true`, { replace: true })
     } catch (err) {
+      setPaymentStep('idle')
       if (err instanceof Error) {
         const msg = err.message.toLowerCase()
         if (msg.includes('stock') || msg.includes('disponible')) {
@@ -204,6 +242,42 @@ const CheckoutPage = () => {
       refetchAddresses()
     },
     [refetchAddresses]
+  )
+
+  /* ============================================================
+     Mercado Pago — redirecting state
+     ============================================================ */
+  const mpRedirectingSection = paymentStep === 'redirecting' && (
+    <div
+      style={{
+        maxWidth: 400,
+        margin: '0 auto',
+        padding: '80px 24px',
+        textAlign: 'center',
+        animation: 'float-up 320ms var(--ease-out)',
+      }}
+    >
+      <div
+        className="animate-spin"
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          border: '3px solid var(--line)',
+          borderTopColor: 'var(--brand)',
+          margin: '0 auto 24px',
+        }}
+      />
+      <h3
+        className="t-h3"
+        style={{ fontSize: 18, marginBottom: 8 }}
+      >
+        Redirigiendo a Mercado Pago…
+      </h3>
+      <p className="t-caption">
+        Estás siendo redirigido al entorno seguro de pago.
+      </p>
+    </div>
   )
 
   if (items.length === 0) return null
@@ -695,6 +769,15 @@ const CheckoutPage = () => {
 
   /* ---- DESKTOP: 2-column layout ---- */
   if (!isMobile) {
+    // MP redirect replaces the layout entirely
+    if (paymentStep === 'redirecting') {
+      return (
+        <div style={{ maxWidth: 640, margin: '0 auto', padding: '48px 28px 64px' }}>
+          {mpRedirectingSection}
+        </div>
+      )
+    }
+
     return (
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 28px 64px' }}>
         {stepIndicator}
@@ -733,6 +816,15 @@ const CheckoutPage = () => {
   }
 
   /* ---- MOBILE: accordion-style ---- */
+  // MP redirect replaces the normal flow
+  if (paymentStep === 'redirecting') {
+    return (
+      <div style={{ padding: '24px 16px 64px' }}>
+        {mpRedirectingSection}
+      </div>
+    )
+  }
+
   return (
     <div style={{ padding: '24px 16px 32px' }}>
       {stepIndicator}
@@ -810,10 +902,14 @@ const CheckoutPage = () => {
               background: isProcessing ? 'var(--line)' : 'var(--brand)',
               color: isProcessing ? 'var(--ink-3)' : 'white',
               boxShadow: isProcessing ? 'none' : 'var(--shadow-brand)',
-              transition: 'all var(--d-fast) var(--ease-out)',
             }}
           >
-            {isProcessing ? 'Procesando…' : `Confirmar pedido · ${formatPrice(grandTotal)}`}
+            {isProcessing ? (
+              <>
+                <span className="animate-spin" style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', display: 'inline-block', marginRight: 8 }} />
+                Procesando…
+              </>
+            ) : `Confirmar pedido · ${formatPrice(grandTotal)}`}
           </button>
         ) : (
           <button
