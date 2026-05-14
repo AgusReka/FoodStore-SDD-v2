@@ -20,7 +20,7 @@ from backend.modules.categorias.model import Category
 from backend.modules.productos.model import Product
 from backend.modules.ingredientes.model import Ingredient, ProductIngredient
 from backend.modules.direcciones.model import Address
-from backend.modules.pedidos.model import Order, OrderItem
+from backend.modules.pedidos.model import Order, OrderHistory, OrderItem
 from backend.modules.pagos.model import Payment
 
 
@@ -305,28 +305,25 @@ async def seed_address(session, user):
     return address
 
 
-async def seed_order(session, user, address, products):
-    """Create a test order with items and payment."""
-    existing_order = await session.execute(
-        select(Order).where(Order.user_id == user.id).limit(1)
-    )
-    if existing_order.scalar_one_or_none():
-        print("  [  ] Test order already exists, skipping")
-        return
-
+async def _create_order_with_history(
+    session, user, address, products, status, payment_status, product_indices, order_idx, history=None
+):
+    """Helper to create an order with items, optional payment, and history entries."""
     product_list = list(products.values())
-    total = sum(p.price for p in product_list[:3])
+    selected = [product_list[i] for i in product_indices]
+    total = sum(p.price for p in selected)
+
     order = Order(
         user_id=user.id,
         address_id=address.id,
-        status=OrderStatus.CONFIRMADO,
+        status=status,
         total=total,
         currency="ARS",
     )
     session.add(order)
     await session.flush()
 
-    for product in product_list[:3]:
+    for product in selected:
         item = OrderItem(
             order_id=order.id,
             product_id=product.id,
@@ -336,16 +333,118 @@ async def seed_order(session, user, address, products):
         )
         session.add(item)
 
-    payment = Payment(
-        order_id=order.id,
-        payment_method=PaymentMethod.MERCADOPAGO,
-        status=PaymentStatus.APROBADO,
-        amount=total,
-        currency="ARS",
-    )
-    session.add(payment)
+    if payment_status:
+        payment = Payment(
+            order_id=order.id,
+            payment_method=PaymentMethod.MERCADOPAGO,
+            status=payment_status,
+            amount=total,
+            currency="ARS",
+        )
+        session.add(payment)
+
+    if history:
+        for entry in history:
+            h = OrderHistory(
+                order_id=order.id,
+                from_status=entry["from"],
+                to_status=entry["to"],
+                reason=entry.get("reason"),
+            )
+            session.add(h)
+
     await session.flush()
-    print(f"  [OK] Test order created: {order.id} (${total:.2f})")
+    print(f"  [OK] Order #{order_idx}: status={status.value}, items={len(selected)}, total=${total:.2f}")
+    return order
+
+
+async def seed_orders(session, user, address, products):
+    """Create multiple test orders in different statuses with history entries."""
+    # Check if orders already exist
+    existing = await session.execute(
+        select(Order).where(Order.user_id == user.id)
+    )
+    existing_orders = existing.scalars().all()
+    if existing_orders:
+        print(f"  [  ] {len(existing_orders)} orders already exist, skipping")
+        return
+
+    # Order 1: PENDIENTE — just created, no payment yet
+    await _create_order_with_history(
+        session, user, address, products,
+        status=OrderStatus.PENDIENTE,
+        payment_status=None,
+        product_indices=[0, 1],  # Coca Cola, Agua Mineral
+        order_idx=1,
+        history=None,
+    )
+
+    # Order 2: CONFIRMADO — paid, waiting to be prepared
+    await _create_order_with_history(
+        session, user, address, products,
+        status=OrderStatus.CONFIRMADO,
+        payment_status=PaymentStatus.APROBADO,
+        product_indices=[4, 5],  # Lomito, Papas Fritas
+        order_idx=2,
+        history=[
+            {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+        ],
+    )
+
+    # Order 3: PREPARANDO — being cooked
+    await _create_order_with_history(
+        session, user, address, products,
+        status=OrderStatus.PREPARANDO,
+        payment_status=PaymentStatus.APROBADO,
+        product_indices=[6, 8],  # Pizza Margarita, Pizza Especial
+        order_idx=3,
+        history=[
+            {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+            {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+        ],
+    )
+
+    # Order 4: ENVIADO — on the way
+    await _create_order_with_history(
+        session, user, address, products,
+        status=OrderStatus.ENVIADO,
+        payment_status=PaymentStatus.APROBADO,
+        product_indices=[12, 13, 14],  # Caesar, Griega, Bowl
+        order_idx=4,
+        history=[
+            {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+            {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+            {"from": OrderStatus.PREPARANDO, "to": OrderStatus.ENVIADO, "reason": "Pedido en camino"},
+        ],
+    )
+
+    # Order 5: ENTREGADO — completed
+    await _create_order_with_history(
+        session, user, address, products,
+        status=OrderStatus.ENTREGADO,
+        payment_status=PaymentStatus.APROBADO,
+        product_indices=[2, 3],  # Hamburguesa, Pizza Napolitana
+        order_idx=5,
+        history=[
+            {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+            {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+            {"from": OrderStatus.PREPARANDO, "to": OrderStatus.ENVIADO, "reason": "Pedido en camino"},
+            {"from": OrderStatus.ENVIADO, "to": OrderStatus.ENTREGADO, "reason": "Entregado al cliente"},
+        ],
+    )
+
+    # Order 6: CANCELADO — was confirmed then cancelled
+    await _create_order_with_history(
+        session, user, address, products,
+        status=OrderStatus.CANCELADO,
+        payment_status=PaymentStatus.REEMBOLSADO,
+        product_indices=[10, 11],  # Spaghetti, Ravioles
+        order_idx=6,
+        history=[
+            {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+            {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.CANCELADO, "reason": "Cancelado por el cliente"},
+        ],
+    )
 
 
 async def main():
@@ -381,7 +480,7 @@ async def main():
         await session.commit()
 
         print("\n  -- Orders --")
-        await seed_order(session, test_user, address, products)
+        await seed_orders(session, test_user, address, products)
         await session.commit()
 
     print("\n=== Seed completed successfully! ===")

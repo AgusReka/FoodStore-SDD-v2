@@ -1,6 +1,6 @@
 # Project Structure Specification
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Monorepo Organization
 

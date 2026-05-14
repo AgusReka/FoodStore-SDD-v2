@@ -1,8 +1,11 @@
 """Admin service."""
+from datetime import datetime
 from uuid import UUID
 
-from backend.core.enums import UserRole
+from sqlalchemy import and_
+from backend.core.enums import OrderStatus, UserRole
 from backend.core.exceptions import NotFoundError
+from backend.modules.pedidos.model import Order
 from backend.modules.pedidos.repository import PedidoRepository
 from backend.modules.usuarios.repository import UserRepository
 
@@ -21,5 +24,23 @@ class AdminService:
             raise NotFoundError(f"User {user_id} not found")
         return await self.user_repo.update(user_id, role=role)
 
-    async def list_all_orders(self, page: int = 1, size: int = 20):
-        return await self.pedido_repo.paginate(page=page, size=size)
+    async def list_all_orders(
+        self,
+        page: int = 1,
+        size: int = 20,
+        estado: OrderStatus | None = None,
+        desde: datetime | None = None,
+        hasta: datetime | None = None,
+    ):
+        filters: list = []
+        if estado:
+            filters.append(Order.status == estado)
+        if desde:
+            filters.append(Order.created_at >= desde)
+        if hasta:
+            filters.append(Order.created_at <= hasta)
+
+        return await self.pedido_repo.paginate(
+            page=page, size=size, filters=filters or None,
+            order_by="created_at", descending=True,
+        )

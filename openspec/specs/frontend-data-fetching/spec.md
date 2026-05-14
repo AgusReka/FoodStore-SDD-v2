@@ -1,4 +1,4 @@
-## ADDED Requirements
+## Requirements
 
 ### Requirement: TanStack Query provider configured
 The frontend SHALL have TanStack Query (React Query v5) configured with a QueryClient provider.

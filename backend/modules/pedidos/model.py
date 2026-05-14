@@ -1,4 +1,4 @@
-"""Order and OrderItem models."""
+"""Order, OrderItem and OrderHistory models."""
 import uuid
 from datetime import datetime
 
@@ -31,6 +31,26 @@ class Order(Base):
     address: Mapped["Address | None"] = relationship("Address")
     items: Mapped[list["OrderItem"]] = relationship("OrderItem", back_populates="order", lazy="selectin", cascade="all, delete-orphan")
     payment: Mapped["Payment | None"] = relationship("Payment", back_populates="order", uselist=False, lazy="selectin")
+    history: Mapped[list["OrderHistory"]] = relationship("OrderHistory", back_populates="order", lazy="selectin", cascade="all, delete-orphan")
+
+
+class OrderHistory(Base):
+    __tablename__ = "order_history"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("pedidos.id", ondelete="CASCADE"), nullable=False)
+    from_status: Mapped[OrderStatus] = mapped_column("from_status", Enum(OrderStatus), nullable=False)
+    to_status: Mapped[OrderStatus] = mapped_column("to_status", Enum(OrderStatus), nullable=False)
+    changed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="SET NULL"), nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        Index("ix_order_history_order_id", "order_id"),
+        Index("ix_order_history_created_at", "created_at"),
+    )
+
+    order: Mapped["Order"] = relationship("Order", back_populates="history")
 
 
 class OrderItem(Base):

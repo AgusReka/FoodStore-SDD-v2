@@ -32,6 +32,7 @@ export const ENDPOINTS = {
   // Products
   PRODUCTS_LIST: `${PRODUCTS}/`,
   PRODUCTS_DETAIL: (id: string | number) => `${PRODUCTS}/${id}`,
+  PRODUCTS_POPULAR: `${PRODUCTS}/popular`,
   PRODUCTS_STOCK: (id: string | number) => `${PRODUCTS}/${id}/stock`,
 
   // Categories
@@ -47,6 +48,7 @@ export const ENDPOINTS = {
   ORDERS_DETAIL: (id: string | number) => `${ORDERS}/${id}`,
   ORDERS_CREATE: `${ORDERS}/`,
   ORDERS_UPDATE_STATUS: (id: string | number) => `${ORDERS}/${id}/status`,
+  ORDERS_HISTORY: (id: string | number) => `${ORDERS}/${id}/history`,
 
   // Payments
   PAYMENTS_CREATE: `${PAYMENTS}/`,

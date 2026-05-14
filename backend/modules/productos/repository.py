@@ -1,4 +1,5 @@
 """Product repository."""
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -100,7 +101,7 @@ class ProductRepository(BaseRepository[Product]):
         if product.ingredients:
             # Deduct from each ingredient with FOR UPDATE
             for pi in product.ingredients:
-                needed = float(pi.quantity) * quantity
+                needed = Decimal(str(float(pi.quantity) * quantity))
                 stmt = (
                     sa_select(Ingredient)
                     .where(Ingredient.id == pi.ingredient_id)
@@ -120,7 +121,7 @@ class ProductRepository(BaseRepository[Product]):
             result = await self.session.execute(stmt)
             prod = result.scalar_one_or_none()
             if prod and prod.stock_cantidad is not None:
-                prod.stock_cantidad -= quantity
+                prod.stock_cantidad -= Decimal(str(quantity))
 
     async def restore_product_stock(self, product_id: UUID, quantity: int) -> None:
         """Atomically restore stock for a single product (for cancellations).
@@ -135,7 +136,7 @@ class ProductRepository(BaseRepository[Product]):
 
         if product.ingredients:
             for pi in product.ingredients:
-                needed = float(pi.quantity) * quantity
+                needed = Decimal(str(float(pi.quantity) * quantity))
                 stmt = (
                     sa_select(Ingredient)
                     .where(Ingredient.id == pi.ingredient_id)
@@ -154,7 +155,7 @@ class ProductRepository(BaseRepository[Product]):
             result = await self.session.execute(stmt)
             prod = result.scalar_one_or_none()
             if prod and prod.stock_cantidad is not None:
-                prod.stock_cantidad += quantity
+                prod.stock_cantidad += Decimal(str(quantity))
 
     async def get_low_stock_ingredients(self) -> list[Ingredient]:
         """Get all ingredients where stock_actual < stock_minimo, ordered by severity."""

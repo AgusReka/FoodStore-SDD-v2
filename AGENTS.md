@@ -104,7 +104,7 @@ Estas skills están instaladas localmente en `.agents/skills/` y disponibles par
 | **tailwind-design-system** | Sistemas de diseño con Tailwind v4 | Al crear design tokens, themes, dark mode, o componentes reutilizables en la sección **admin** | `.agents/skills/tailwind-design-system/` |
 | **zustand-state-management** | Manejo de estado con Zustand | Al crear/editar stores globales, estado de auth/carrito/etc. | `.agents/skills/zustand-state-management/` |
 | **dashboard-crud-page** | Páginas CRUD estandarizadas | Al crear páginas CRUD de listado/creación/edición/borrado en la sección **admin** | `.agents/skills/dashboard-crud-page/` |
-| **food-ecommerce-ui** | UI de e-commerce para delivery de comida (Mesa Design System) | Al crear landing pages, grillas de productos, cards de comida, carrito, checkout, y toda la UI del frontend de **cliente** | `.agents/skills/food-ecommerce-ui/` |
+| **foodstore-design** | Sistema de diseño FoodStore (Mesa Design System) — UI de cliente premium, mobile-first | Al crear landing pages, grillas de productos, cards de comida, carrito, checkout, y toda la UI del frontend de **cliente** | `.agents/skills/foodstore-design/` |
 | **judgment-day** | Revisión adversarial paralela | Al decir "judgment day", "revisión", "que lo juzguen", "doble review" | `.agents/skills/judgment-day/` |
 | **skill-creator** | Crear nuevas skills | Al querer documentar patrones o crear nuevas instrucciones para el agente | `.agents/skills/skill-creator/` |
 | **find-skills** | Descubrir e instalar skills del ecosistema | Al preguntar "cómo hago X", "hay una skill para X", o querer extender capacidades | `.agents/skills/find-skills/` |
@@ -156,6 +156,11 @@ Estas skills están instaladas globalmente en `~/.claude/skills/` y también pue
 - State management con Zustand
 - Data fetching con TanStack Query
 - Estilos con TailwindCSS
+
+### Nomenclatura
+- **TODO el código en inglés**: nombres de campos, variables, schemas Pydantic, interfaces TypeScript, atributos de modelos SQLAlchemy, endpoints, query params — todo en inglés
+- Las columnas de la BD pueden mantener español (`calle`, `es_principal`) mapeadas con SQLAlchemy `Column("calle", ...)`, pero la capa de aplicación (Python/TS) siempre usa inglés
+- Excepción: mensajes para el usuario final (UI text, toasts, etc.) van en español (Argentina)
 
 ### Commits
 - Usar **Conventional Commits**

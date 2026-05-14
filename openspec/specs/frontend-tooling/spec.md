@@ -1,4 +1,4 @@
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Vite React TypeScript project initialization
 The frontend SHALL be initialized as a Vite project with React and TypeScript template.

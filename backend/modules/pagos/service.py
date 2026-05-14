@@ -1,4 +1,5 @@
 """Payment service."""
+import logging
 from uuid import UUID
 
 from backend.core.enums import OrderStatus, PaymentMethod, PaymentStatus
@@ -7,6 +8,10 @@ from backend.core.service import BaseService
 from backend.modules.pagos.model import Payment
 from backend.modules.pagos.repository import PagoRepository
 from backend.modules.pedidos.repository import PedidoRepository
+from backend.modules.pedidos.service import OrderService
+from backend.modules.productos.repository import ProductRepository
+
+logger = logging.getLogger(__name__)
 
 
 class PagoService(BaseService[Payment]):
@@ -43,6 +48,18 @@ class PagoService(BaseService[Payment]):
         updated = await self.repository.update(payment_id, status=new_status)
 
         if new_status == PaymentStatus.APROBADO:
-            await self.pedido_repo.update(payment.order_id, status=OrderStatus.CONFIRMADO)
+            try:
+                product_repo = ProductRepository(self.pedido_repo.session)
+                order_service = OrderService(self.pedido_repo, product_repo)
+                await order_service.update_status(
+                    payment.order_id,
+                    OrderStatus.CONFIRMADO,
+                    reason="Payment approved",
+                )
+            except Exception:
+                logger.warning(
+                    "Could not transition order %s to CONFIRMADO after payment approval",
+                    payment.order_id,
+                )
 
         return updated

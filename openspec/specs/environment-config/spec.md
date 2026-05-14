@@ -1,6 +1,6 @@
 # Environment Configuration Specification
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Backend Environment Variables
 

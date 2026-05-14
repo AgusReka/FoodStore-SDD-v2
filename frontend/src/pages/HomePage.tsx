@@ -1,16 +1,25 @@
 import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useCustomerProductsList } from '@features/catalog/hooks/useCustomerProducts'
 import { useCustomerCategoriesList } from '@features/catalog/hooks/useCustomerCategories'
 import { SearchBar } from '@features/catalog/components/SearchBar'
 import { CategoryRail } from '@features/catalog/components/CategoryRail'
 import { ProductGrid } from '@entities/product/ProductGrid'
+import { Hero } from '@widgets/Hero'
+import { FiltersRow } from '@widgets/FiltersRow'
+import { ChefsRail } from '@widgets/ChefsRail'
+import { CtaBanner } from '@widgets/CtaBanner'
+import { get } from '@shared/api/client'
+import { ENDPOINTS } from '@shared/api/endpoints'
+import type { Product } from '@entities/product'
+import { useUiStore } from '@shared/stores/uiStore'
 
 export default function HomePage() {
-  const navigate = useNavigate()
+  const openProductModal = useUiStore((s) => s.openProductModal)
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [activeFilters, setActiveFilters] = useState<string[]>([])
 
   const {
     data: productsData,
@@ -23,6 +32,15 @@ export default function HomePage() {
     data: categoriesData,
     isLoading: categoriesLoading,
   } = useCustomerCategoriesList()
+
+  const { data: popularProduct } = useQuery<Product>({
+    queryKey: ['product', 'popular'],
+    queryFn: async () => {
+      const res = await get<Product>(ENDPOINTS.PRODUCTS_POPULAR)
+      return res.data
+    },
+    staleTime: 5 * 60 * 1000,
+  })
 
   const categories = categoriesData?.items ?? []
   const products = productsData?.items ?? []
@@ -40,35 +58,54 @@ export default function HomePage() {
   }, [])
 
   const handleProductClick = useCallback((id: string) => {
-    navigate(`/productos/${id}`)
-  }, [navigate])
+    openProductModal(id)
+  }, [openProductModal])
+
+  const handleFilterToggle = useCallback((key: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(key) ? prev.filter((f) => f !== key) : [...prev, key]
+    )
+  }, [])
 
   return (
     <div className="bg-[var(--bg)] min-h-screen">
-      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[var(--brand-soft)] to-transparent pointer-events-none" />
+      <div className="ambient" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center py-8 mb-6">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[var(--ink-1)] mb-2">
-            Descubre nuestros productos
-          </h1>
-          <p className="text-[var(--ink-3)] text-base">
-            Los mejores ingredientes para tus platos favoritos
-          </p>
-        </div>
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <Hero popularProduct={popularProduct} />
 
-        <div className="mb-6">
-          <SearchBar value={search} onChange={handleSearchChange} />
-        </div>
+        {/* Trust Strip */}
+        <section className="container py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="t-display num text-2xl">18</div>
+              <div className="t-caption">min entrega promedio</div>
+            </div>
+            <div className="text-center">
+              <div className="t-display num text-2xl">4.9</div>
+              <div className="t-caption">rating App Store</div>
+            </div>
+            <div className="text-center">
+              <div className="t-display num text-2xl">42</div>
+              <div className="t-caption">cocinas curadas</div>
+            </div>
+            <div className="text-center">
+              <div className="t-display num text-2xl">500+</div>
+              <div className="t-caption">platos disponibles</div>
+            </div>
+          </div>
+        </section>
 
-        <div className="mb-8">
+        {/* Search + Category + Filters */}
+        <section className="container">
+          <div className="mb-6 max-w-md">
+            <SearchBar value={search} onChange={handleSearchChange} />
+          </div>
+
           {categoriesLoading ? (
             <div className="flex gap-2 overflow-x-auto pb-2">
               {Array.from({ length: 6 }, (_, i) => (
-                <div
-                  key={i}
-                  className="h-9 w-24 rounded-full bg-[var(--surface)] animate-pulse shrink-0"
-                />
+                <div key={i} className="h-[52px] w-28 rounded-full bg-[var(--surface)] animate-pulse shrink-0" />
               ))}
             </div>
           ) : (
@@ -78,45 +115,52 @@ export default function HomePage() {
               onSelect={handleCategorySelect}
             />
           )}
-        </div>
 
-        <ProductGrid
-          products={products}
-          isLoading={productsLoading}
-          error={productsError}
-          onRetry={() => productsRefetch()}
-          onProductClick={handleProductClick}
-        />
+          <FiltersRow activeFilters={activeFilters} onToggle={handleFilterToggle} />
+        </section>
 
-        {total > 12 && (
-          <div className="flex items-center justify-center gap-4 mt-8 pb-8">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                page <= 1
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]'
-              }`}
-            >
-              Anterior
-            </button>
-            <span className="text-sm text-[var(--ink-2)]">
-              Página {page} de {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                page >= totalPages
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]'
-              }`}
-            >
-              Siguiente
-            </button>
+        {/* Product Grid with stagger */}
+        <section className="container py-8">
+          <div className="stagger">
+            <ProductGrid
+              products={products}
+              isLoading={productsLoading}
+              error={productsError}
+              onRetry={() => productsRefetch()}
+              onProductClick={handleProductClick}
+            />
           </div>
-        )}
+
+          {/* Pagination — Mesa styled */}
+          {total > 12 && (
+            <div className="flex items-center justify-center gap-4 mt-10 pb-8">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className={`btn btn-sm ${page <= 1 ? 'btn-ghost opacity-40' : 'btn-primary'}`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+                </svg>
+                Anterior
+              </button>
+              <span className="t-caption num">Página {page} de {totalPages}</span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className={`btn btn-sm ${page >= totalPages ? 'btn-ghost opacity-40' : 'btn-primary'}`}
+              >
+                Siguiente
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </section>
+
+        <ChefsRail />
+        <CtaBanner />
       </div>
     </div>
   )

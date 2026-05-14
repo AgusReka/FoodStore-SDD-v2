@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOrdersList } from '@features/orders/hooks/useOrders'
 import { OrderList } from '@entities/order/OrderList'
+import EmptyState from '@widgets/EmptyState'
 
 const STATUS_FILTERS = [
   { value: null, label: 'Todos' },
@@ -15,17 +16,86 @@ const STATUS_FILTERS = [
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
-      <div className="flex items-start justify-between mb-3">
-        <div className="space-y-2">
-          <div className="h-4 w-28 bg-gray-200 rounded" />
-          <div className="h-3 w-36 bg-gray-100 rounded" />
+    <div
+      style={{
+        background: 'var(--bg-elevated)',
+        borderRadius: 'var(--r-lg)',
+        padding: 20,
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div
+            style={{
+              width: 120,
+              height: 16,
+              borderRadius: 6,
+              background:
+                'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.4s ease-in-out infinite',
+            }}
+          />
+          <div
+            style={{
+              width: 160,
+              height: 12,
+              borderRadius: 6,
+              background:
+                'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.4s ease-in-out infinite 0.1s',
+            }}
+          />
         </div>
-        <div className="h-6 w-20 bg-gray-200 rounded-full" />
+        <div
+          style={{
+            width: 80,
+            height: 28,
+            borderRadius: 999,
+            background:
+              'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.4s ease-in-out infinite 0.2s',
+          }}
+        />
       </div>
-      <div className="flex items-center justify-between">
-        <div className="h-4 w-20 bg-gray-200 rounded" />
-        <div className="h-5 w-24 bg-gray-200 rounded" />
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <div
+          style={{
+            width: 80,
+            height: 14,
+            borderRadius: 6,
+            background:
+              'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.4s ease-in-out infinite 0.3s',
+          }}
+        />
+        <div
+          style={{
+            width: 100,
+            height: 20,
+            borderRadius: 6,
+            background:
+              'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.4s ease-in-out infinite 0.4s',
+          }}
+        />
       </div>
     </div>
   )
@@ -45,31 +115,84 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Mis Pedidos</h1>
-      <p className="text-gray-500 mb-6">Historial de pedidos realizados</p>
+    <div className="container" style={{ paddingTop: 32, paddingBottom: 32 }}>
+      {/* Header */}
+      <h1
+        style={{
+          fontFamily: 'var(--ff-display)',
+          fontWeight: 600,
+          fontSize: 'clamp(28px, 3vw, 36px)',
+          color: 'var(--ink-1)',
+          margin: '0 0 6px',
+        }}
+      >
+        Mis Pedidos
+      </h1>
+      <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '0 0 24px' }}>
+        Historial de pedidos realizados
+      </p>
 
-      {/* Status filter tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
-        {STATUS_FILTERS.map((filter) => (
-          <button
-            key={filter.value ?? 'all'}
-            type="button"
-            onClick={() => handleFilterChange(filter.value)}
-            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              statusFilter === filter.value
-                ? 'bg-[var(--brand)] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {filter.label}
-          </button>
-        ))}
+      {/* Status filter pills */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          overflowX: 'auto',
+          padding: '4px 0 24px',
+          marginBottom: 4,
+        }}
+      >
+        {STATUS_FILTERS.map((filter) => {
+          const isActive = statusFilter === filter.value
+          return (
+            <button
+              key={filter.value ?? 'all'}
+              type="button"
+              onClick={() => handleFilterChange(filter.value)}
+              style={{
+                whiteSpace: 'nowrap',
+                height: 38,
+                padding: '0 16px',
+                borderRadius: 999,
+                background: isActive ? 'var(--ink-1)' : 'var(--bg-elevated)',
+                color: isActive ? 'white' : 'var(--ink-1)',
+                border: isActive
+                  ? '1px solid var(--ink-1)'
+                  : '1px solid var(--line)',
+                fontWeight: 500,
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 180ms',
+                boxShadow: isActive
+                  ? '0 6px 16px rgba(20,16,12,0.12)'
+                  : 'var(--shadow-xs)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'var(--surface)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'var(--bg-elevated)'
+                }
+              }}
+            >
+              {filter.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Loading state */}
       {isLoading && (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <style>{`
+            @keyframes shimmer {
+              from { background-position: 200% 0; }
+              to { background-position: -200% 0; }
+            }
+          `}</style>
           {Array.from({ length: 4 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -78,12 +201,63 @@ const OrdersPage = () => {
 
       {/* Error state */}
       {isError && (
-        <div className="text-center py-16">
-          <p className="text-gray-500 mb-4">Ocurrió un error al cargar tus pedidos</p>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '48px 24px',
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 'var(--r-lg)',
+              background: 'rgba(230,57,70,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--warm-red)',
+              margin: '0 auto 16px',
+            }}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <p
+            style={{
+              fontSize: 15,
+              fontWeight: 500,
+              color: 'var(--ink-1)',
+              margin: '0 0 4px',
+            }}
+          >
+            Ocurrió un error
+          </p>
+          <p
+            style={{
+              fontSize: 13.5,
+              color: 'var(--ink-3)',
+              margin: '0 0 20px',
+            }}
+          >
+            No pudimos cargar tus pedidos
+          </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
+            className="btn btn-primary"
           >
             Reintentar
           </button>
@@ -92,32 +266,44 @@ const OrdersPage = () => {
 
       {/* Empty state */}
       {!isLoading && !isError && data && data.items.length === 0 && (
-        <div className="text-center py-16">
-          <div className="text-5xl mb-4">📋</div>
-          {statusFilter ? (
-            <>
-              <p className="text-gray-500 mb-1">No tenés pedidos con ese estado</p>
-              <button
-                type="button"
-                onClick={() => handleFilterChange(null)}
-                className="text-sm text-[var(--brand)] hover:underline"
-              >
-                Ver todos los pedidos
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-gray-500 mb-1">No tenés pedidos todavía</p>
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="mt-4 px-6 py-2.5 rounded-xl text-sm font-semibold bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
-              >
-                Ver productos
-              </button>
-            </>
-          )}
-        </div>
+        <EmptyState
+          icon={
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 8h12l-1 12.5a2 2 0 0 1-2 1.5H9a2 2 0 0 1-2-1.5L6 8z" />
+              <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+            </svg>
+          }
+          title={
+            statusFilter
+              ? 'No hay pedidos con ese estado'
+              : 'Todavía no tenés pedidos'
+          }
+          description={
+            statusFilter
+              ? 'Probá con otro filtro'
+              : 'Hacé tu primer pedido para verlo acá'
+          }
+          action={
+            statusFilter
+              ? {
+                  label: 'Ver todos',
+                  onClick: () => handleFilterChange(null),
+                }
+              : {
+                  label: 'Ver productos',
+                  onClick: () => navigate('/'),
+                }
+          }
+        />
       )}
 
       {/* Order list */}

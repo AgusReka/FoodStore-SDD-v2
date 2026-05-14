@@ -1,14 +1,21 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useCartStore } from '@shared/stores/cartStore'
 import { usePaymentStore } from '@shared/stores/paymentStore'
+import { useBreakpoint } from '@shared/hooks/useBreakpoint'
 import { get, post } from '@shared/api/client'
 import type { PaginatedResponse } from '@shared/api/client'
 import { ENDPOINTS } from '@shared/api/endpoints'
+import { CONFIG } from '@shared/config/brand'
+import { TipSelector } from '@widgets/TipSelector'
+import { ShippingBar } from '@widgets/ShippingBar'
 import { AddressCard } from '@entities/address/AddressCard'
 import { AddressForm } from '@entities/address/AddressForm'
 
+/* ============================================================
+   Types
+   ============================================================ */
 interface Address {
   id: string
   street: string
@@ -28,14 +35,27 @@ interface CreatePaymentResponse {
   status: string
 }
 
-const PAYMENT_METHODS = [
-  { value: 'efectivo', label: 'Efectivo', icon: '💵' },
-  { value: 'transferencia', label: 'Transferencia', icon: '🏦' },
-  { value: 'mercadopago', label: 'Mercado Pago', icon: '🟡' },
+type PaymentMethod = 'efectivo' | 'transferencia' | 'mercadopago'
+
+type Step = 'entrega' | 'pago' | 'resumen'
+
+/* ============================================================
+   Payment method config
+   ============================================================ */
+const PAYMENT_METHODS: { value: PaymentMethod; label: string; desc: string }[] = [
+  { value: 'efectivo', label: 'Efectivo', desc: 'Pagás al recibir el pedido' },
+  { value: 'transferencia', label: 'Transferencia', desc: 'Transferencia bancaria' },
+  { value: 'mercadopago', label: 'Mercado Pago', desc: 'Pagá con tarjeta, débito o Mercado Pago' },
 ]
 
+/* ============================================================
+   CheckoutPage — Mesa 3-step checkout
+   Desktop: 2-col (form left + sticky summary 360px)
+   Mobile: collapsible accordion steps
+   ============================================================ */
 const CheckoutPage = () => {
   const navigate = useNavigate()
+  const { isMobile } = useBreakpoint()
   const items = useCartStore((s) => s.items)
   const total = useCartStore((s) => s.total)
   const clearCart = useCartStore((s) => s.clearCart)
@@ -47,6 +67,8 @@ const CheckoutPage = () => {
   const [showAddressForm, setShowAddressForm] = useState(false)
   const [orderError, setOrderError] = useState<string | null>(null)
   const [stockErrors, setStockErrors] = useState<string[]>([])
+  const [currentStep, setCurrentStep] = useState<Step>('entrega')
+  const [tip, setTip] = useState(10)
 
   // Redirect to cart if empty
   useEffect(() => {
@@ -54,6 +76,11 @@ const CheckoutPage = () => {
       navigate('/cart', { replace: true })
     }
   }, [items, navigate])
+
+  // Reset payment state on mount
+  useEffect(() => {
+    resetPayment()
+  }, [resetPayment])
 
   // Fetch addresses
   const { data: addressesData, isLoading: addressesLoading, refetch: refetchAddresses } = useQuery({
@@ -67,11 +94,11 @@ const CheckoutPage = () => {
 
   const addresses = addressesData ?? []
 
-  // Pre-select principal address
+  // Pre-select primary address
   useEffect(() => {
     if (addresses.length > 0 && !selectedAddressId) {
-      const principal = addresses.find((a) => a.is_primary)
-      setSelectedAddressId(principal?.id ?? addresses[0].id)
+      const primary = addresses.find((a) => a.is_primary)
+      setSelectedAddressId(primary?.id ?? addresses[0].id)
     }
   }, [addresses, selectedAddressId])
 
@@ -96,13 +123,46 @@ const CheckoutPage = () => {
       const response = await post<CreatePaymentResponse>(ENDPOINTS.PAYMENTS_CREATE, {
         pedido_id,
         payment_method: paymentMethod,
-        amount: total,
+        amount: grandTotal,
       })
       return response.data
     },
   })
 
   const isProcessing = orderMutation.isPending || paymentMutation.isPending
+
+  // Calculate fees
+  const deliveryFee = total >= CONFIG.freeDeliveryAt ? 0 : CONFIG.deliveryFee
+  const tipAmount = Math.round(total * (tip / 100))
+  const grandTotal = total + deliveryFee + tipAmount
+
+  const formatPrice = (n: number) =>
+    `$${n.toLocaleString(CONFIG.locale, { minimumFractionDigits: 2 })}`
+
+  // Validation per step
+  const canProceed = useMemo(() => {
+    switch (currentStep) {
+      case 'entrega':
+        return !!selectedAddressId
+      case 'pago':
+        return !!paymentMethod
+      case 'resumen':
+        return true
+    }
+  }, [currentStep, selectedAddressId, paymentMethod])
+
+  const handleNext = useCallback(() => {
+    if (currentStep === 'entrega' && selectedAddressId) {
+      setCurrentStep('pago')
+    } else if (currentStep === 'pago' && paymentMethod) {
+      setCurrentStep('resumen')
+    }
+  }, [currentStep, selectedAddressId, paymentMethod])
+
+  const handleBack = useCallback(() => {
+    if (currentStep === 'pago') setCurrentStep('entrega')
+    else if (currentStep === 'resumen') setCurrentStep('pago')
+  }, [currentStep])
 
   const handleConfirmOrder = useCallback(async () => {
     if (!selectedAddressId) {
@@ -118,17 +178,10 @@ const CheckoutPage = () => {
     setStockErrors([])
 
     try {
-      // Step 1: Create order
       const order = await orderMutation.mutateAsync()
-
-      // Step 2: Create payment
       await paymentMutation.mutateAsync({ pedido_id: order.id })
-
-      // Step 3: Clear cart + reset payment state
       clearCart()
       resetPayment()
-
-      // Step 4: Navigate to order confirmation
       navigate(`/orders/${order.id}?new=true`, { replace: true })
     } catch (err) {
       if (err instanceof Error) {
@@ -144,192 +197,753 @@ const CheckoutPage = () => {
     }
   }, [selectedAddressId, paymentMethod, orderMutation, paymentMutation, clearCart, resetPayment, navigate, total])
 
-  const handleAddressCreated = useCallback((address: Address) => {
-    setShowAddressForm(false)
-    setSelectedAddressId(address.id)
-    refetchAddresses()
-  }, [refetchAddresses])
+  const handleAddressCreated = useCallback(
+    (address: Address) => {
+      setShowAddressForm(false)
+      setSelectedAddressId(address.id)
+      refetchAddresses()
+    },
+    [refetchAddresses]
+  )
 
   if (items.length === 0) return null
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
+  /* ============================================================
+     Step Indicator
+     ============================================================ */
+  const steps: { key: Step; label: string }[] = [
+    { key: 'entrega', label: 'Entrega' },
+    { key: 'pago', label: 'Pago' },
+    { key: 'resumen', label: 'Resumen' },
+  ]
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left column: Form */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Order Summary */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Resumen del pedido</h2>
-            <div className="divide-y divide-gray-100">
-              {items.map((item) => (
-                <div key={item.productId} className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300">🍽</div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                      <p className="text-xs text-gray-500">${item.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })} c/u</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">× {item.quantity}</p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      ${(item.price * item.quantity).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+  const stepIndicator = (
+    <div
+      style={{
+        display: 'flex',
+        gap: 0,
+        marginBottom: 32,
+        background: 'var(--surface)',
+        borderRadius: 999,
+        padding: 4,
+      }}
+    >
+      {steps.map((s, i) => {
+        const isActive = s.key === currentStep
+        const isComplete = steps.findIndex((st) => st.key === currentStep) > i
+        return (
+          <button
+            key={s.key}
+            type="button"
+            onClick={() => {
+              // Allow navigating back to completed steps only
+              const currentIdx = steps.findIndex((st) => st.key === currentStep)
+              const targetIdx = steps.findIndex((st) => st.key === s.key)
+              if (targetIdx < currentIdx) setCurrentStep(s.key)
+            }}
+            style={{
+              flex: 1,
+              padding: '8px 16px',
+              borderRadius: 999,
+              border: 'none',
+              fontSize: 13,
+              fontWeight: isActive ? 600 : 500,
+              fontFamily: 'inherit',
+              cursor: isComplete || isActive ? 'pointer' : 'default',
+              background: isActive ? 'var(--bg-elevated)' : 'transparent',
+              color: isActive ? 'var(--ink-1)' : 'var(--ink-3)',
+              boxShadow: isActive ? 'var(--shadow-xs)' : 'none',
+              transition: 'all var(--d-fast) var(--ease-out)',
+            }}
+          >
+            {i + 1}. {s.label}
+          </button>
+        )
+      })}
+    </div>
+  )
 
-          {/* Delivery Address */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Dirección de entrega</h2>
+  /* ============================================================
+     Step 1: Entrega
+     ============================================================ */
+  const stepEntrega = (
+    <div className="space-y-5">
+      <div>
+        <h3 className="t-h3" style={{ fontSize: 18, marginBottom: 4 }}>Dirección de entrega</h3>
+        <p className="t-caption">¿Dónde querés recibir tu pedido?</p>
+      </div>
 
-            {addressesLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin h-6 w-6 border-2 border-[var(--brand)] border-t-transparent rounded-full" />
-              </div>
-            ) : addresses.length > 0 && !showAddressForm ? (
-              <div className="space-y-3">
-                {addresses.map((addr) => (
-                  <AddressCard
-                    key={addr.id}
-                    address={addr}
-                    isSelected={selectedAddressId === addr.id}
-                    onSelect={setSelectedAddressId}
-                  />
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setShowAddressForm(true)}
-                  className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors text-sm font-medium"
-                >
-                  + Agregar otra dirección
-                </button>
-              </div>
-            ) : showAddressForm ? (
-              <AddressForm
-                onSuccess={handleAddressCreated}
-                onCancel={() => setShowAddressForm(false)}
-              />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">No tenés direcciones guardadas</p>
-                <button
-                  type="button"
-                  onClick={() => setShowAddressForm(true)}
-                  className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
-                >
-                  Agregar dirección
-                </button>
-              </div>
-            )}
-          </section>
-
-          {/* Payment Method */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Método de pago</h2>
-            <div className="space-y-3">
-              {PAYMENT_METHODS.map((method) => (
-                <label
-                  key={method.value}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    paymentMethod === method.value
-                      ? 'border-[var(--brand)] bg-[var(--brand-soft)]'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value={method.value}
-                    checked={paymentMethod === method.value}
-                    onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}
-                    className="sr-only"
-                  />
-                  <span className="text-2xl">{method.icon}</span>
-                  <span className="font-medium text-gray-900">{method.label}</span>
-                  {paymentMethod === method.value && (
-                    <span className="ml-auto text-[var(--brand)]">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                    </span>
-                  )}
-                </label>
-              ))}
-            </div>
-          </section>
+      {addressesLoading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+          <div
+            className="animate-spin"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              border: '2.5px solid var(--line)',
+              borderTopColor: 'var(--brand)',
+            }}
+          />
         </div>
+      ) : addresses.length > 0 && !showAddressForm ? (
+        <div className="space-y-3">
+          {addresses.map((addr) => (
+            <AddressCard
+              key={addr.id}
+              address={addr}
+              isSelected={selectedAddressId === addr.id}
+              onSelect={setSelectedAddressId}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowAddressForm(true)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: 'var(--r-md)',
+              border: '2px dashed var(--line-strong)',
+              background: 'transparent',
+              color: 'var(--ink-3)',
+              fontSize: 13.5,
+              fontWeight: 500,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              transition: 'all var(--d-fast) var(--ease-out)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--brand)'
+              e.currentTarget.style.color = 'var(--brand)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--line-strong)'
+              e.currentTarget.style.color = 'var(--ink-3)'
+            }}
+          >
+            + Agregar otra dirección
+          </button>
+        </div>
+      ) : showAddressForm ? (
+        <AddressForm
+          onSuccess={handleAddressCreated}
+          onCancel={() => setShowAddressForm(false)}
+        />
+      ) : (
+        <div style={{ textAlign: 'center', padding: '32px 0' }}>
+          <p style={{ color: 'var(--ink-3)', marginBottom: 16, fontSize: 14 }}>
+            No tenés direcciones guardadas
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowAddressForm(true)}
+            className="btn btn-primary"
+          >
+            Agregar dirección
+          </button>
+        </div>
+      )}
 
-        {/* Right column: Summary + Confirm */}
-        <div className="lg:col-span-1">
-          <div className="lg:sticky lg:top-24 space-y-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Total</h3>
-              <div className="space-y-2 text-sm mb-6">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Envío</span>
-                  <span className="text-green-600 font-medium">Gratis</span>
-                </div>
-                <hr className="border-gray-200" />
-                <div className="flex justify-between text-base font-bold text-gray-900">
-                  <span>Total</span>
-                  <span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-                </div>
-              </div>
+      {/* Delivery info callout */}
+      <div
+        style={{
+          background: 'var(--brand-soft)',
+          borderRadius: 'var(--r-sm)',
+          padding: '12px 16px',
+          display: 'flex',
+          gap: 10,
+          alignItems: 'flex-start',
+        }}
+      >
+        <span style={{ fontSize: 16, flexShrink: 0 }}>🚚</span>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--brand-ink)', marginBottom: 2 }}>
+            Delivery estimado: 30-45 min
+          </p>
+          <p className="t-caption" style={{ color: 'var(--brand-ink)', opacity: 0.7 }}>
+            Tiempo promedio desde que confirmás el pedido
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 
-              {/* Errors */}
-              {orderError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
-                  {orderError}
-                </div>
+  /* ============================================================
+     Step 2: Pago
+     ============================================================ */
+  const stepPago = (
+    <div className="space-y-6">
+      <div>
+        <h3 className="t-h3" style={{ fontSize: 18, marginBottom: 4 }}>Método de pago</h3>
+        <p className="t-caption">Elegí cómo querés pagar</p>
+      </div>
+
+      <div className="space-y-3">
+        {PAYMENT_METHODS.map((method) => (
+          <label
+            key={method.value}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '14px 16px',
+              borderRadius: 'var(--r-md)',
+              border: `2px solid ${paymentMethod === method.value ? 'var(--brand)' : 'var(--line)'}`,
+              background: paymentMethod === method.value ? 'var(--brand-soft)' : 'var(--bg-elevated)',
+              cursor: 'pointer',
+              transition: 'all var(--d-fast) var(--ease-out)',
+            }}
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              value={method.value}
+              checked={paymentMethod === method.value}
+              onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+              style={{ display: 'none' }}
+            />
+            <div
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: '50%',
+                border: `2px solid ${paymentMethod === method.value ? 'var(--brand)' : 'var(--ink-3)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'border-color var(--d-fast) var(--ease-out)',
+              }}
+            >
+              {paymentMethod === method.value && (
+                <div
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    background: 'var(--brand)',
+                  }}
+                />
               )}
-              {stockErrors.length > 0 && (
-                <div className="space-y-2 mb-4">
-                  {stockErrors.map((err, i) => (
-                    <div key={i} className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                      {err}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <button
-                onClick={handleConfirmOrder}
-                disabled={isProcessing || !selectedAddressId || !paymentMethod}
-                className="w-full py-3 px-6 rounded-xl text-base font-semibold bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Procesando...
-                  </>
-                ) : orderError || stockErrors.length > 0 ? (
-                  'Reintentar'
-                ) : (
-                  'Confirmar pedido'
-                )}
-              </button>
             </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-1)' }}>
+                {method.label}
+              </p>
+              <p className="t-caption">{method.desc}</p>
+            </div>
+          </label>
+        ))}
+      </div>
+
+      {/* Tip */}
+      <TipSelector tip={tip} onTipChange={setTip} />
+    </div>
+  )
+
+  /* ============================================================
+     Step 3: Resumen
+     ============================================================ */
+  const stepResumen = (
+    <div className="space-y-6">
+      <div>
+        <h3 className="t-h3" style={{ fontSize: 18, marginBottom: 4 }}>Resumen del pedido</h3>
+        <p className="t-caption">Revisá todo antes de confirmar</p>
+      </div>
+
+      {/* Items */}
+      <div className="space-y-3">
+        {items.map((item) => (
+          <div
+            key={item.productId}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '10px 0',
+              borderBottom: '1px solid var(--line)',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {item.name}
+              </p>
+              <p className="t-caption">
+                {formatPrice(item.price)} c/u × {item.quantity}
+              </p>
+            </div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-1)', fontVariantNumeric: 'tabular-nums' }}>
+              {formatPrice(item.price * item.quantity)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Delivery address summary */}
+      {selectedAddressId && (
+        <div
+          style={{
+            background: 'var(--surface)',
+            borderRadius: 'var(--r-sm)',
+            padding: '12px 16px',
+          }}
+        >
+          <p className="t-eyebrow" style={{ fontSize: 10, marginBottom: 4 }}>ENTREGAR EN</p>
+          <p style={{ fontSize: 14, color: 'var(--ink-1)', fontWeight: 500 }}>
+            {addresses.find((a) => a.id === selectedAddressId)?.street ?? 'Dirección seleccionada'}
+          </p>
+        </div>
+      )}
+
+      {/* Payment summary */}
+      {paymentMethod && (
+        <div
+          style={{
+            background: 'var(--surface)',
+            borderRadius: 'var(--r-sm)',
+            padding: '12px 16px',
+          }}
+        >
+          <p className="t-eyebrow" style={{ fontSize: 10, marginBottom: 4 }}>PAGO</p>
+          <p style={{ fontSize: 14, color: 'var(--ink-1)', fontWeight: 500 }}>
+            {PAYMENT_METHODS.find((m) => m.value === paymentMethod)?.label ?? paymentMethod}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+
+  /* ============================================================
+     Summary sidebar (desktop) / bottom sheet (mobile)
+     ============================================================ */
+  const summaryPanel = (
+    <div
+      style={{
+        background: 'var(--bg-elevated)',
+        borderRadius: 'var(--r-lg)',
+        border: '1px solid var(--line)',
+        padding: 24,
+      }}
+    >
+      <h3
+        className="t-h3"
+        style={{ fontSize: 16, marginBottom: 20 }}
+      >
+        Total del pedido
+      </h3>
+
+      <div className="space-y-3">
+        <FeeRow label={`Productos (${items.length})`} value={formatPrice(total)} />
+        <FeeRow
+          label="Envío"
+          value={deliveryFee === 0 ? 'Gratis' : formatPrice(deliveryFee)}
+          valueColor={deliveryFee === 0 ? 'var(--success)' : undefined}
+        />
+        {tip > 0 && (
+          <FeeRow label={`Propina (${tip}%)`} value={formatPrice(tipAmount)} />
+        )}
+        <div style={{ height: 1, background: 'var(--line-strong)' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink-1)' }}>Total</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink-1)', fontVariantNumeric: 'tabular-nums' }}>
+            {formatPrice(grandTotal)}
+          </span>
+        </div>
+      </div>
+
+      {total < CONFIG.freeDeliveryAt && (
+        <div style={{ marginTop: 16 }}>
+          <ShippingBar />
+        </div>
+      )}
+
+      {/* Errors */}
+      {orderError && (
+        <div
+          style={{
+            marginTop: 16,
+            background: 'rgba(230,57,70,0.08)',
+            border: '1px solid rgba(230,57,70,0.2)',
+            borderRadius: 'var(--r-sm)',
+            padding: '10px 14px',
+            fontSize: 13,
+            color: 'var(--danger)',
+          }}
+        >
+          {orderError}
+        </div>
+      )}
+      {stockErrors.length > 0 && (
+        <div style={{ marginTop: 12 }} className="space-y-2">
+          {stockErrors.map((err, i) => (
+            <div
+              key={i}
+              style={{
+                background: 'rgba(230,57,70,0.08)',
+                border: '1px solid rgba(230,57,70,0.2)',
+                borderRadius: 'var(--r-sm)',
+                padding: '10px 14px',
+                fontSize: 13,
+                color: 'var(--danger)',
+              }}
+            >
+              {err}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Confirm button (only on summary step for desktop, always visible on mobile bottom) */}
+      {currentStep === 'resumen' && (
+        <button
+          onClick={handleConfirmOrder}
+          disabled={isProcessing}
+          style={{
+            width: '100%',
+            marginTop: 20,
+            padding: '14px 24px',
+            borderRadius: 999,
+            border: 'none',
+            fontSize: 15,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            cursor: isProcessing ? 'not-allowed' : 'pointer',
+            background: isProcessing ? 'var(--line)' : 'var(--brand)',
+            color: isProcessing ? 'var(--ink-3)' : 'white',
+            boxShadow: isProcessing ? 'none' : 'var(--shadow-brand)',
+            transition: 'all var(--d-fast) var(--ease-out)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}
+        >
+          {isProcessing ? (
+            <>
+              <span className="animate-spin" style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', display: 'inline-block' }} />
+              Procesando…
+            </>
+          ) : orderError || stockErrors.length > 0 ? (
+            'Reintentar'
+          ) : (
+            `Confirmar pedido · ${formatPrice(grandTotal)}`
+          )}
+        </button>
+      )}
+    </div>
+  )
+
+  /* ============================================================
+     Navigation buttons
+     ============================================================ */
+  const navButtons = (
+    <div
+      style={{
+        display: 'flex',
+        gap: 12,
+        justifyContent: 'space-between',
+        marginTop: 24,
+      }}
+    >
+      {currentStep !== 'entrega' ? (
+        <button
+          type="button"
+          onClick={handleBack}
+          style={{
+            padding: '12px 24px',
+            borderRadius: 999,
+            border: '1px solid var(--line)',
+            background: 'transparent',
+            color: 'var(--ink-2)',
+            fontSize: 14,
+            fontWeight: 500,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            transition: 'all var(--d-fast) var(--ease-out)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+        >
+          ← Volver
+        </button>
+      ) : <div />}
+
+      {currentStep !== 'resumen' && (
+        <button
+          type="button"
+          onClick={handleNext}
+          disabled={!canProceed}
+          style={{
+            padding: '12px 28px',
+            borderRadius: 999,
+            border: 'none',
+            fontSize: 14,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            cursor: canProceed ? 'pointer' : 'not-allowed',
+            background: canProceed ? 'var(--brand)' : 'var(--line)',
+            color: canProceed ? 'white' : 'var(--ink-3)',
+            boxShadow: canProceed ? 'var(--shadow-brand)' : 'none',
+            transition: 'all var(--d-fast) var(--ease-out)',
+          }}
+        >
+          Continuar
+        </button>
+      )}
+    </div>
+  )
+
+  /* ---- DESKTOP: 2-column layout ---- */
+  if (!isMobile) {
+    return (
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 28px 64px' }}>
+        {stepIndicator}
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 360px',
+            gap: 40,
+            alignItems: 'start',
+          }}
+        >
+          {/* Left: Form */}
+          <div>
+            {/* Step content */}
+            <div
+              style={{
+                animation: 'float-up 320ms var(--ease-out)',
+              }}
+            >
+              {currentStep === 'entrega' && stepEntrega}
+              {currentStep === 'pago' && stepPago}
+              {currentStep === 'resumen' && stepResumen}
+            </div>
+
+            {navButtons}
+          </div>
+
+          {/* Right: Sticky summary */}
+          <div style={{ position: 'sticky', top: 96 }}>
+            {summaryPanel}
           </div>
         </div>
       </div>
+    )
+  }
+
+  /* ---- MOBILE: accordion-style ---- */
+  return (
+    <div style={{ padding: '24px 16px 32px' }}>
+      {stepIndicator}
+
+      {/* Always show all steps as collapsible sections */}
+      <div className="space-y-4">
+        {/* Step 1: Entrega */}
+        <StepSection
+          number={1}
+          title="Entrega"
+          isOpen={true}
+          completed={currentStep !== 'entrega'}
+        >
+          {stepEntrega}
+        </StepSection>
+
+        {/* Step 2: Pago */}
+        <StepSection
+          number={2}
+          title="Pago"
+          isOpen={currentStep === 'pago'}
+          completed={steps.findIndex((s) => s.key === currentStep) >= 1}
+        >
+          {stepPago}
+        </StepSection>
+
+        {/* Step 3: Resumen */}
+        <StepSection
+          number={3}
+          title="Resumen"
+          isOpen={currentStep === 'resumen'}
+          completed={steps.findIndex((s) => s.key === currentStep) >= 2}
+        >
+          {stepResumen}
+        </StepSection>
+      </div>
+
+      {navButtons}
+
+      {/* Fixed bottom summary + confirm */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          background: 'var(--bg-elevated)',
+          borderTop: '1px solid var(--line)',
+          padding: '12px 16px',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+          boxShadow: '0 -4px 20px rgba(20,16,12,0.06)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>Total</span>
+          <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink-1)' }}>
+            {formatPrice(grandTotal)}
+          </span>
+        </div>
+
+        {currentStep === 'resumen' ? (
+          <button
+            onClick={handleConfirmOrder}
+            disabled={isProcessing}
+            style={{
+              width: '100%',
+              padding: '14px 24px',
+              borderRadius: 999,
+              border: 'none',
+              fontSize: 15,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+              cursor: isProcessing ? 'not-allowed' : 'pointer',
+              background: isProcessing ? 'var(--line)' : 'var(--brand)',
+              color: isProcessing ? 'var(--ink-3)' : 'white',
+              boxShadow: isProcessing ? 'none' : 'var(--shadow-brand)',
+              transition: 'all var(--d-fast) var(--ease-out)',
+            }}
+          >
+            {isProcessing ? 'Procesando…' : `Confirmar pedido · ${formatPrice(grandTotal)}`}
+          </button>
+        ) : (
+          <button
+            onClick={handleNext}
+            disabled={!canProceed}
+            style={{
+              width: '100%',
+              padding: '14px 24px',
+              borderRadius: 999,
+              border: 'none',
+              fontSize: 15,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+              cursor: canProceed ? 'pointer' : 'not-allowed',
+              background: canProceed ? 'var(--brand)' : 'var(--line)',
+              color: canProceed ? 'white' : 'var(--ink-3)',
+              boxShadow: canProceed ? 'var(--shadow-brand)' : 'none',
+            }}
+          >
+            Continuar
+          </button>
+        )}
+      </div>
+
+      {/* Spacer for fixed footer */}
+      <div style={{ height: 120 }} />
+    </div>
+  )
+}
+
+/* ============================================================
+   StepSection — Collapsible section for mobile accordion
+   ============================================================ */
+function StepSection({
+  number,
+  title,
+  isOpen,
+  completed,
+  children,
+}: {
+  number: number
+  title: string
+  isOpen: boolean
+  completed: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      style={{
+        background: 'var(--bg-elevated)',
+        borderRadius: 'var(--r-lg)',
+        border: `1px solid ${isOpen ? 'var(--brand-soft)' : 'var(--line)'}`,
+        overflow: 'hidden',
+        transition: 'border-color var(--d-fast) var(--ease-out)',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '14px 16px',
+          background: completed && !isOpen ? 'var(--brand-soft)' : 'transparent',
+        }}
+      >
+        <div
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 13,
+            fontWeight: 700,
+            fontFamily: 'var(--ff-body)',
+            background: completed ? 'var(--success)' : isOpen ? 'var(--brand)' : 'var(--line)',
+            color: 'white',
+            flexShrink: 0,
+          }}
+        >
+          {completed ? '✓' : number}
+        </div>
+        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-1)' }}>
+          {title}
+        </span>
+      </div>
+
+      {/* Content */}
+      {isOpen && (
+        <div style={{ padding: '0 16px 16px' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ============================================================
+   FeeRow — Label + value line
+   ============================================================ */
+function FeeRow({
+  label,
+  value,
+  valueColor,
+}: {
+  label: string
+  value: string
+  valueColor?: string
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}
+    >
+      <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>{label}</span>
+      <span
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color: valueColor ?? 'var(--ink-1)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {value}
+      </span>
     </div>
   )
 }

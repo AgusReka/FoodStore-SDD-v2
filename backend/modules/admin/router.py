@@ -1,9 +1,11 @@
+from datetime import datetime
 from uuid import UUID
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.auth import require_permission
 from backend.core.database import get_db
+from backend.core.enums import OrderStatus
 from backend.core.exceptions import NotFoundError
 from backend.core.permissions import Permission
 from backend.modules.admin.schemas import StockAlertItem, StockAlertList, UserRoleUpdate
@@ -96,10 +98,13 @@ async def list_all_orders(
     _: Annotated[dict, Depends(require_permission(Permission.ORDER_LIST_ALL))],
     db: Annotated[AsyncSession, Depends(get_db)],
     page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=100),
+    size: int = Query(20, ge=1, le=500),
+    estado: OrderStatus | None = Query(None, description="Filter by order status"),
+    desde: datetime | None = Query(None, description="Filter orders created after this date (ISO 8601)"),
+    hasta: datetime | None = Query(None, description="Filter orders created before this date (ISO 8601)"),
 ):
     user_repo = UserRepository(db)
     pedido_repo = PedidoRepository(db)
     service = AdminService(user_repo, pedido_repo)
-    items, total = await service.list_all_orders(page=page, size=size)
+    items, total = await service.list_all_orders(page=page, size=size, estado=estado, desde=desde, hasta=hasta)
     return PedidoList(items=list(items), total=total, page=page, size=size)

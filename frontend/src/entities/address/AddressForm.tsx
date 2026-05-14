@@ -56,7 +56,7 @@ export function AddressForm({ onSuccess, onCancel }: AddressFormProps) {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Calle</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Calle <span className="text-red-500">*</span></label>
         <div className="flex gap-2">
           <input
             id="addr-street"
@@ -76,12 +76,13 @@ export function AddressForm({ onSuccess, onCancel }: AddressFormProps) {
             placeholder="N°"
             disabled={isSaving}
           />
+          <span className="text-xs text-gray-400 self-center">(opcional)</span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="addr-city" className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+          <label htmlFor="addr-city" className="block text-sm font-medium text-gray-700 mb-1">Ciudad <span className="text-red-500">*</span></label>
           <input
             id="addr-city"
             type="text"
@@ -93,7 +94,7 @@ export function AddressForm({ onSuccess, onCancel }: AddressFormProps) {
           />
         </div>
         <div>
-          <label htmlFor="addr-postal-code" className="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
+          <label htmlFor="addr-postal-code" className="block text-sm font-medium text-gray-700 mb-1">Código Postal <span className="text-red-500">*</span></label>
           <input
             id="addr-postal-code"
             type="text"
@@ -105,6 +106,10 @@ export function AddressForm({ onSuccess, onCancel }: AddressFormProps) {
           />
         </div>
       </div>
+
+      <p className="text-xs text-gray-400">
+        <span className="text-red-500">*</span> Campos obligatorios
+      </p>
 
       <div className="flex gap-3 pt-2">
         <button

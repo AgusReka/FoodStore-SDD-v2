@@ -17,6 +17,18 @@ class PedidoCreate(BaseModel):
 
 class PedidoUpdateStatus(BaseModel):
     status: OrderStatus
+    reason: str | None = None
+
+
+class OrderHistoryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    from_status: OrderStatus
+    to_status: OrderStatus
+    changed_by: UUID | None = None
+    reason: str | None = None
+    created_at: datetime
 
 
 class OrderItemRead(BaseModel):

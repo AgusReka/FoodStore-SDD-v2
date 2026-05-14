@@ -8,11 +8,16 @@ interface StockAlertList {
   total: number
 }
 
+interface PaginatedResponse {
+  total: number
+}
+
 const navItems = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/categories', label: 'Categorías', end: false },
   { to: '/admin/ingredients', label: 'Ingredientes', end: false },
   { to: '/admin/products', label: 'Productos', end: false },
+  { to: '/admin/orders', label: 'Pedidos', end: false },
   { to: '/admin/stock-alerts', label: 'Alertas de Stock', end: false },
 ]
 
@@ -29,7 +34,18 @@ const AdminPage = () => {
     refetchInterval: 60_000,
   })
 
+  // Fetch pending orders count for sidebar badge
+  const { data: pendingOrdersData } = useQuery<PaginatedResponse>({
+    queryKey: ['pending-orders-count'],
+    queryFn: async () => {
+      const response = await get<PaginatedResponse>(ENDPOINTS.ADMIN_ORDERS_LIST, { estado: 'pendiente', page: 1, size: 1 })
+      return response.data
+    },
+    refetchInterval: 60_000,
+  })
+
   const alertCount = alertData?.total ?? 0
+  const pendingOrdersCount = pendingOrdersData?.total ?? 0
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -55,6 +71,11 @@ const AdminPage = () => {
               }
             >
               <span>{item.label}</span>
+              {item.label === 'Pedidos' && pendingOrdersCount > 0 && (
+                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                  {pendingOrdersCount}
+                </span>
+              )}
               {item.label === 'Alertas de Stock' && alertCount > 0 && (
                 <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
                   {alertCount}

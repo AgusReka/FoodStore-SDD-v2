@@ -1,6 +1,6 @@
 # Backend Health Check Specification
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Health Endpoint
 

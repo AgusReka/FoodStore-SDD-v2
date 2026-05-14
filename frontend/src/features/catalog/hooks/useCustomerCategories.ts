@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { get } from '@shared/api/client'
 import { ENDPOINTS } from '@shared/api/endpoints'
 import type { PaginatedResponse } from '@shared/api/client'
-import type { CategoryRaw, Category } from '@entities/category'
+import type { CategoryRaw } from '@entities/category'
 import { normalizeCategory } from '@entities/category'
 
 export const customerCategoriesKeys = {

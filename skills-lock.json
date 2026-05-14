@@ -12,9 +12,16 @@
       "computedHash": "9e1c8b3103f92fa8092568a44fe64858de7c5c9dc65ce4bea8f168080e889cfd"
     },
     "food-ecommerce-ui": {
-      "source": "C:\\Users\\messi\\Downloads\\food-ecommerce-ui",
-      "sourceType": "local",
-      "computedHash": "75039420b5f3048afc97d7978303b8e9c4941d860268992abcda25f4bab274ad"
+      "source": "AgusReka/food-ecommerce-ui",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "dc9387dd41610d347bd124898f66aaaa31eece1df042dbd579d8d8ef50875001"
+    },
+    "foodstore-design": {
+      "source": "AgusReka/foodstore-design",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "3624b6d97d516f8767e27edfc0008230d1b8d229cd0eea68666d4fca32acd595"
     },
     "judgment-day": {
       "source": "local",

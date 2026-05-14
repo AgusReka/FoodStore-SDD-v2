@@ -1,32 +1,17 @@
+import { STATUS_TIMELINE_STEPS, STATUS_ORDER, type OrderStatus } from '@shared/constants/orderStatus'
+
 interface OrderTimelineProps {
   status: string
 }
 
-const STEPS = [
-  { key: 'pendiente', label: 'Pendiente' },
-  { key: 'confirmado', label: 'Confirmado' },
-  { key: 'preparando', label: 'Preparando' },
-  { key: 'enviado', label: 'Enviado' },
-  { key: 'entregado', label: 'Entregado' },
-]
-
-const STATUS_ORDER: Record<string, number> = {
-  pendiente: 0,
-  confirmado: 1,
-  preparando: 2,
-  enviado: 3,
-  entregado: 4,
-  cancelado: -1,
-}
-
 export function OrderTimeline({ status }: OrderTimelineProps) {
-  const currentIndex = STATUS_ORDER[status] ?? -1
+  const currentIndex = STATUS_ORDER[status as OrderStatus] ?? -1
   const isCancelled = status === 'cancelado'
 
   return (
     <div className="py-4">
       <div className="flex items-center justify-between">
-        {STEPS.map((step, index) => {
+        {STATUS_TIMELINE_STEPS.map((step, index) => {
           const isCompleted = !isCancelled && currentIndex >= index
           const isCurrent = !isCancelled && currentIndex === index
 

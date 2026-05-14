@@ -3,11 +3,14 @@ schema: spec-driven
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Tech stack: FastAPI (Python), React (TypeScript), PostgreSQL
+  Domain: food delivery e-commerce
+  Conventions:
+    - All code in English: field names, variables, API schemas, TypeScript interfaces, SQLAlchemy model attributes
+    - DB columns can use Spanish (e.g. `calle`) mapped via Column("calle", ...) — application layer always English
+    - UI text, toasts, user-facing messages in Spanish (Argentina)
+    - Conventional commits: feat, fix, docs, refactor
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

@@ -1,4 +1,5 @@
 """Order service."""
+import logging
 from uuid import UUID
 
 from backend.core.enums import OrderStatus
@@ -6,13 +7,17 @@ from backend.core.exceptions import NotFoundError, ValidationError
 from backend.core.service import BaseService
 from backend.modules.pedidos.model import Order, OrderItem
 from backend.modules.pedidos.repository import PedidoRepository
+from backend.modules.pedidos.state_machine import OrderStateMachine, SideEffect
 from backend.modules.productos.repository import ProductRepository
+
+logger = logging.getLogger(__name__)
 
 
 class OrderService(BaseService[Order]):
     def __init__(self, pedido_repo: PedidoRepository, product_repo: ProductRepository):
         super().__init__(pedido_repo)
         self.product_repo = product_repo
+        self.state_machine = OrderStateMachine()
 
     async def create_order(
         self, user_id: UUID, items: list[dict], address_id: UUID | None = None
@@ -65,13 +70,11 @@ class OrderService(BaseService[Order]):
         Also re-validates stock before deducting (double-check).
         """
         for item in order.items:
-            # Re-validate stock before deducting
             available, error_msg = await self.product_repo.check_stock(item.product_id, item.quantity)
             if not available:
                 raise ValidationError(
                     error_msg or f"Stock changed for product {item.product_id} — cannot confirm"
                 )
-            # Deduct
             await self.product_repo.deduct_product_stock(item.product_id, item.quantity)
 
     async def _restore_stock(self, order: Order) -> None:
@@ -79,40 +82,39 @@ class OrderService(BaseService[Order]):
         for item in order.items:
             await self.product_repo.restore_product_stock(item.product_id, item.quantity)
 
-    async def update_status(self, order_id: UUID, new_status: OrderStatus) -> Order:
-        order = await self.repository.get(order_id)
+    async def update_status(
+        self,
+        order_id: UUID,
+        new_status: OrderStatus,
+        changed_by: UUID | None = None,
+        reason: str | None = None,
+    ) -> Order:
+        order = await self.repository.get_with_items_for_update(order_id)
         if not order:
             raise NotFoundError(f"Order {order_id} not found")
 
-        valid_transitions = {
-            OrderStatus.PENDIENTE: [OrderStatus.CONFIRMADO, OrderStatus.CANCELADO],
-            OrderStatus.CONFIRMADO: [OrderStatus.PREPARANDO, OrderStatus.CANCELADO],
-            OrderStatus.PREPARANDO: [OrderStatus.ENVIADO],
-            OrderStatus.ENVIADO: [OrderStatus.ENTREGADO],
-        }
+        old_status = order.status
+        result = self.state_machine.transition(old_status, new_status)
+        if not result.allowed:
+            raise ValidationError(result.error)
 
-        allowed = valid_transitions.get(order.status, [])
-        if new_status not in allowed:
-            raise ValidationError(
-                f"Invalid status transition from '{order.status.value}' to '{new_status.value}'"
-            )
+        for effect in result.side_effects:
+            if effect == SideEffect.DEDUCT_STOCK:
+                await self._deduct_stock(order)
+            elif effect == SideEffect.RESTORE_STOCK:
+                await self._restore_stock(order)
 
-        # Stock operations within transaction
-        if new_status == OrderStatus.CONFIRMADO and order.status == OrderStatus.PENDIENTE:
-            # Load items with relationship
-            order = await self.repository.get(order_id)
-            # Refresh with items
-            await self.repository.session.refresh(order)
-            await self._deduct_stock(order)
-
-        if new_status == OrderStatus.CANCELADO and order.status == OrderStatus.CONFIRMADO:
-            # Restore stock that was deducted at confirmation
-            order = await self.repository.get(order_id)
-            await self.repository.session.refresh(order)
-            await self._restore_stock(order)
-
-        updated = await self.repository.update(order_id, status=new_status)
-        return updated
+        order.status = new_status
+        await self.repository.add_history(
+            order_id=order_id,
+            from_status=old_status,
+            to_status=new_status,
+            changed_by=changed_by,
+            reason=reason,
+        )
+        await self.repository.session.commit()
+        await self.repository.session.refresh(order)
+        return order
 
     async def list_by_user(
         self, user_id: UUID, skip: int = 0, limit: int = 20, status: OrderStatus | None = None

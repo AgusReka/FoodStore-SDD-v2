@@ -21,12 +21,26 @@ The frontend SHALL use React Router v6 with defined routes for all auth flows, i
 - **AND** all auth routes (login, register, forgot-password, reset-password, verify-email) SHALL be publicly accessible
 
 ### Requirement: Layout component for shared UI
-The app SHALL have a root Layout component for shared UI elements.
+The app SHALL have a root Layout component for the customer-facing section.
 
-#### Scenario: Layout with Outlet
-- **WHEN** the developer inspects the routing structure
-- **THEN** there SHALL be a `Layout` component using `<Outlet />` from react-router-dom
-- **AND** the Layout SHALL wrap all child routes (prepared for navbar/sidebar)
+**Old:** The Layout SHALL wrap all child routes (prepared for navbar/sidebar).
+
+**New:** The Layout SHALL wrap customer-facing routes only. Admin routes SHALL use a separate standalone layout (`AdminPage`) that is NOT nested inside the root Layout.
+
+#### Scenario: Layout wraps only customer routes
+- **WHEN** the developer inspects the route configuration in `App.tsx`
+- **THEN** the `<Route element={<Layout />}>` wrapper SHALL only contain customer-facing routes (public pages + protected customer pages)
+- **AND** `/admin/*` routes SHALL be defined OUTSIDE the Layout wrapper
+
+#### Scenario: AdminPage renders as standalone layout
+- **WHEN** the developer inspects the route configuration
+- **THEN** `/admin/*` routes SHALL be defined with `AdminPage` as a top-level route element (not nested inside Layout)
+- **AND** `AdminPage` SHALL be wrapped by `ProtectedRoute`
+- **AND** `AdminPage` SHALL remain at the same path (`/admin`) as before
+
+#### Scenario: 404 route at top level
+- **WHEN** the developer inspects the route configuration
+- **THEN** the `NotFound` catch-all route (`path="*"`) SHALL be defined at the top level of `<Routes>`, outside both the Layout wrapper and the admin branch
 
 ### Requirement: Lazy loading prepared for routes
 The routing setup SHALL be prepared for code splitting with React.lazy.
@@ -68,4 +82,24 @@ The login flow SHALL redirect users back to their originally requested page afte
 #### Scenario: Register redirects to login
 - **WHEN** a user successfully registers
 - **THEN** the user SHALL be redirected to `/login?email=<registered_email>`
+
+### Requirement: Admin orders routes defined
+
+The frontend SHALL define routes for the admin orders management pages under the admin layout.
+
+#### Scenario: Admin orders list route
+- **WHEN** the developer inspects the route configuration
+- **THEN** the route `/admin/orders` SHALL be defined inside the admin `<Route>` block
+- **AND** it SHALL render the admin orders list page component
+- **AND** it SHALL be a child of the `AdminPage` layout (renders inside `<Outlet />`)
+
+#### Scenario: Admin order detail route
+- **WHEN** the developer inspects the route configuration
+- **THEN** the route `/admin/orders/:id` SHALL be defined inside the admin `<Route>` block
+- **AND** it SHALL render the admin order detail page component
+- **AND** the `:id` parameter SHALL be the order UUID
+
+#### Scenario: Route order matches sidebar
+- **WHEN** the developer inspects the route configuration
+- **THEN** the admin orders route SHALL be placed after products and before stock-alerts, matching the sidebar navigation order
 

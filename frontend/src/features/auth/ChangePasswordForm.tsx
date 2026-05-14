@@ -50,67 +50,161 @@ const ChangePasswordForm = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-10 bg-bg-tertiary shadow-lg rounded-xl p-8">
-      <h2 className="text-2xl font-bold text-text-primary mb-6 text-center">Cambiar Contraseña</h2>
+    <div>
+      <h3
+        style={{
+          fontFamily: 'var(--ff-display)',
+          fontWeight: 600,
+          fontSize: 18,
+          margin: '0 0 16px',
+          color: 'var(--ink-1)',
+        }}
+      >
+        Cambiar Contraseña
+      </h3>
+
       {success && (
-        <div className="bg-green-900/50 border border-green-500 text-green-200 px-4 py-3 rounded-lg mb-4">
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: 'var(--r-sm)',
+            background: 'rgba(94,138,58,0.1)',
+            border: '1px solid rgba(94,138,58,0.2)',
+            color: 'var(--leaf)',
+            fontSize: 13,
+            fontWeight: 500,
+            marginBottom: 16,
+          }}
+        >
           {success}
         </div>
       )}
+
       {errorMessage && (
-        <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg mb-4">
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: 'var(--r-sm)',
+            background: 'rgba(230,57,70,0.08)',
+            border: '1px solid rgba(230,57,70,0.15)',
+            color: 'var(--warm-red)',
+            fontSize: 13,
+            fontWeight: 500,
+            marginBottom: 16,
+          }}
+        >
           {errorMessage}
         </div>
       )}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="current-password" className="block text-text-secondary mb-1">Contraseña actual</label>
+
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+      >
+        {/* Current password */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label
+            htmlFor="current-password"
+            style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-2)' }}
+          >
+            Contraseña actual
+          </label>
           <input
             id="current-password"
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full px-4 py-2 bg-bg-secondary border border-gray-700 rounded-lg text-text-primary focus:outline-none focus:border-accent placeholder-text-tertiary"
+            className="input"
             placeholder="••••••••"
           />
-          {fieldErrors.currentPassword && <p className="text-red-400 text-sm mt-1">{fieldErrors.currentPassword}</p>}
+          {fieldErrors.currentPassword && (
+            <p style={{ fontSize: 12.5, color: 'var(--warm-red)', margin: '2px 0 0' }}>
+              {fieldErrors.currentPassword}
+            </p>
+          )}
         </div>
-        <div>
-          <label htmlFor="new-password" className="block text-text-secondary mb-1">Nueva contraseña</label>
+
+        {/* New password */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label
+            htmlFor="new-password"
+            style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-2)' }}
+          >
+            Nueva contraseña
+          </label>
           <input
             id="new-password"
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full px-4 py-2 bg-bg-secondary border border-gray-700 rounded-lg text-text-primary focus:outline-none focus:border-accent placeholder-text-tertiary"
+            className="input"
             placeholder="••••••••"
           />
-          {fieldErrors.newPassword && <p className="text-red-400 text-sm mt-1">{fieldErrors.newPassword}</p>}
+          {fieldErrors.newPassword && (
+            <p style={{ fontSize: 12.5, color: 'var(--warm-red)', margin: '2px 0 0' }}>
+              {fieldErrors.newPassword}
+            </p>
+          )}
         </div>
-        <div>
-          <label htmlFor="confirm-new-password" className="block text-text-secondary mb-1">Confirmar nueva contraseña</label>
+
+        {/* Confirm password */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label
+            htmlFor="confirm-new-password"
+            style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-2)' }}
+          >
+            Confirmar nueva contraseña
+          </label>
           <input
             id="confirm-new-password"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-4 py-2 bg-bg-secondary border border-gray-700 rounded-lg text-text-primary focus:outline-none focus:border-accent placeholder-text-tertiary"
+            className="input"
             placeholder="••••••••"
           />
-          {fieldErrors.confirmPassword && <p className="text-red-400 text-sm mt-1">{fieldErrors.confirmPassword}</p>}
+          {fieldErrors.confirmPassword && (
+            <p style={{ fontSize: 12.5, color: 'var(--warm-red)', margin: '2px 0 0' }}>
+              {fieldErrors.confirmPassword}
+            </p>
+          )}
         </div>
+
+        {/* Submit */}
         <button
           type="submit"
           disabled={isChangingPassword}
-          className="w-full bg-accent hover:bg-accent-light text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="btn btn-primary"
+          style={{
+            alignSelf: 'flex-start',
+            opacity: isChangingPassword ? 0.7 : 1,
+          }}
         >
-          {isChangingPassword && (
-            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+          {isChangingPassword ? (
+            <>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                style={{ animation: 'spin 0.8s linear infinite' }}
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeDasharray="50"
+                  strokeDashoffset="12"
+                  strokeLinecap="round"
+                />
+              </svg>
+              Cambiando...
+            </>
+          ) : (
+            'Cambiar Contraseña'
           )}
-          Cambiar Contraseña
         </button>
       </form>
     </div>

@@ -5,7 +5,9 @@ TBD - created by archiving change backend-patterns. Update Purpose after archive
 ## Requirements
 ### Requirement: Admin authorization
 
-The original requirement from base spec:
+Admin endpoints SHALL use the centralized `require_permission()` dependency for access control instead of ad-hoc role checks.
+
+**Original requirement from base spec (replaced):**
 > All admin endpoints SHALL require the authenticated user to have role `admin`. Non-admin requests SHALL be rejected.
 
 **Updated requirement:**
@@ -110,4 +112,137 @@ The admin sidebar SHALL show a notification badge on the "Alertas de Stock" link
 #### Scenario: No badge when all stock is OK
 - **WHEN** all ingredients have sufficient stock
 - **THEN** the sidebar SHALL show "Alertas de Stock" without a badge
+
+### Requirement: Admin layout renders independently
+The admin panel SHALL render as a standalone layout with its own sidebar navigation, independent of the customer layout.
+
+#### Scenario: Admin page has independent DOM tree
+- **WHEN** an admin navigates to `/admin`
+- **THEN** the page SHALL render `AdminPage` as the root layout element
+- **AND** the page SHALL NOT be wrapped by the customer `Layout` component
+- **AND** the admin sidebar SHALL be the only navigation element
+
+#### Scenario: Admin sidebar "Volver a la tienda" navigates correctly
+- **WHEN** an admin clicks "← Volver a la tienda" in the admin sidebar
+- **THEN** the system SHALL navigate to `/`
+- **AND** the customer `<Header />` SHALL appear on the destination page
+
+### Requirement: Admin orders list page
+
+The admin panel SHALL provide a page at `/admin/orders` listing ALL orders across all users with pagination, filtering, and sorting.
+
+#### Scenario: Orders list renders with pagination
+- **WHEN** an admin navigates to `/admin/orders`
+- **THEN** the system SHALL display a paginated table of all orders
+- **AND** the table SHALL show columns: ID (truncated UUID), Cliente (nombre + email), Estado (colored badge), Total (formatted with `$`), Fecha de creación (formatted datetime), Acciones
+- **AND** pagination controls SHALL show at the bottom (Previous/Next, page numbers, total count)
+
+#### Scenario: Filter orders by status
+- **WHEN** an admin selects a status filter (e.g., "pendiente")
+- **THEN** the table SHALL only show orders with that status
+- **AND** the URL SHALL update to reflect the filter (`/admin/orders?estado=pendiente`)
+
+#### Scenario: Filter orders by date range
+- **WHEN** an admin selects a date range using date picker inputs
+- **THEN** the table SHALL only show orders within that date range
+- **AND** the API call SHALL include `desde` and `hasta` query parameters
+
+#### Scenario: Search orders by client name
+- **WHEN** an admin types in a search input
+- **THEN** the table SHALL filter orders by client name or email (client-side debounced search)
+
+#### Scenario: Quick action — view order detail
+- **WHEN** an admin clicks "Ver" on an order row
+- **THEN** the system SHALL navigate to `/admin/orders/{id}`
+
+#### Scenario: Quick action — update status
+- **WHEN** an admin clicks the status badge or an "Estado" button
+- **THEN** a dropdown or modal SHALL show the available valid transitions for that order's current status
+- **AND** selecting a new status SHALL call `PATCH /pedidos/{id}/status`
+- **AND** the table SHALL refresh to show the updated status
+
+#### Scenario: Loading state
+- **WHEN** the orders list is loading
+- **THEN** a table skeleton SHALL be displayed with placeholder rows
+
+#### Scenario: Empty state
+- **WHEN** no orders match the current filters
+- **THEN** the system SHALL display "No se encontraron pedidos" with an illustration and a "Limpiar filtros" button
+
+#### Scenario: Error state
+- **WHEN** the API call fails
+- **THEN** the system SHALL display an error message with a "Reintentar" button
+
+### Requirement: Admin order detail page
+
+The admin panel SHALL provide a detail page at `/admin/orders/:id` with full order information.
+
+#### Scenario: Order detail shows customer info
+- **WHEN** an admin views an order detail
+- **THEN** the page SHALL display customer information: name, email, and delivery address
+- **AND** a "Ver cliente" link SHALL navigate to customer management (future)
+
+#### Scenario: Order detail shows order info
+- **WHEN** an admin views an order detail
+- **THEN** the page SHALL display: Order ID (full UUID), Status (colored badge), Created date, Total amount
+- **AND** the status badge SHALL be clickable to change status
+
+#### Scenario: Order detail shows order items
+- **WHEN** an admin views an order detail
+- **THEN** a table SHALL list all items with: Product name, Quantity, Unit price, Subtotal
+- **AND** the total row SHALL show the sum of all subtotals
+
+#### Scenario: Order detail shows payment info
+- **WHEN** an admin views an order detail
+- **THEN** the payment section SHALL display: Payment status (colored badge), Payment method, Amount
+- **AND** if the order is `pendiente`, a "Registrar pago" button MAY be shown (deferred to payment integration)
+
+#### Scenario: Order detail shows status timeline
+- **WHEN** an admin views an order detail
+- **THEN** the `OrderTimeline` component SHALL display the order's status history
+- **AND** the timeline SHALL show each transition with: old status, new status, who changed it, timestamp, and reason (if provided)
+
+#### Scenario: Order detail shows full history
+- **WHEN** an admin views an order detail
+- **THEN** the `OrderHistory` component SHALL display the complete audit trail from `GET /pedidos/{id}/history`
+- **AND** the history SHALL be sorted chronologically (oldest first)
+
+#### Scenario: Change order status from detail
+- **WHEN** an admin clicks "Cambiar Estado" on the order detail page
+- **THEN** a modal SHALL open showing valid target states for the current status
+- **AND** the modal SHALL include a text field for "Razón del cambio" (optional)
+- **AND** upon confirmation, the system SHALL call `PATCH /pedidos/{id}/status`
+- **AND** the page SHALL refresh to reflect the new status and history
+
+#### Scenario: Loading state
+- **WHEN** the order detail is loading
+- **THEN** a full-page skeleton SHALL be displayed
+
+#### Scenario: Error state
+- **WHEN** the order ID does not exist
+- **THEN** the system SHALL display "Pedido no encontrado" with a "Volver a pedidos" link
+
+### Requirement: Admin order status change modal
+
+The admin panel SHALL provide a consistent modal component for changing order status.
+
+#### Scenario: Status modal shows valid transitions
+- **WHEN** an admin opens the change status modal for an order in `confirmado` status
+- **THEN** the modal SHALL show only valid target states: `preparando`, `cancelado`
+- **AND** SHALL NOT show invalid target states (e.g., `pendiente`, `entregado`)
+
+#### Scenario: Status modal confirms action
+- **WHEN** an admin selects a new status and optionally enters a reason
+- **THEN** a confirmation step SHALL show a summary: "¿Cambiar estado de [current] a [new]?"
+- **AND** upon confirming, the API call SHALL be made
+
+#### Scenario: Status change success feedback
+- **WHEN** the status change API call succeeds
+- **THEN** a success toast/notification SHALL appear
+- **AND** the UI SHALL immediately reflect the new status
+
+#### Scenario: Status change error feedback
+- **WHEN** the status change API call fails (e.g., invalid transition)
+- **THEN** an error toast SHALL appear with the error message from the API
+- **AND** the modal SHALL remain open for retry
 

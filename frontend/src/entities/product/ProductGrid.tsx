@@ -99,7 +99,7 @@ export function ProductGrid({ products, isLoading, error, onRetry, onProductClic
       {products.map((product, i) => (
         <div
           key={product.id}
-          className="opacity-0 animate-[fadeIn_360ms_ease-out_forwards]"
+          className="animate-[fade-in_360ms_ease-out_forwards]"
           style={{ animationDelay: `${i * 60}ms` }}
         >
           <ProductCardWrapper product={product} onProductClick={onProductClick} />

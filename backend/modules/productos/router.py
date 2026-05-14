@@ -1,6 +1,8 @@
+from datetime import datetime, timezone, timedelta
 from uuid import UUID
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.auth import require_permission
 from backend.core.database import get_db
@@ -18,6 +20,8 @@ from backend.modules.productos.repository import ProductRepository
 from backend.modules.productos.service import ProductService
 from backend.modules.categorias.repository import CategoriaRepository
 from backend.modules.ingredientes.model import ProductIngredient
+from backend.modules.pedidos.model import Order, OrderItem
+from backend.modules.productos.model import Product
 
 router = APIRouter(tags=["Productos"])
 
@@ -49,6 +53,60 @@ def _build_product_read(product) -> ProductRead:
         created_at=product.created_at,
         updated_at=product.updated_at,
     )
+
+
+@router.get("/popular", response_model=ProductRead)
+async def get_popular_product(
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Get the most popular product based on today's order frequency.
+    
+    Counts occurrences of each product in today's orders (pedidos_items),
+    returns the product with the highest count. Falls back to a random
+    available product if there are no orders today.
+    """
+    today_start = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    today_end = today_start + timedelta(days=1)
+
+    product_repo = ProductRepository(db)
+
+    # Query: count each product's occurrences in today's orders
+    stmt = (
+        select(
+            OrderItem.product_id,
+            func.count(OrderItem.id).label("order_count"),
+        )
+        .join(Order, OrderItem.order_id == Order.id)
+        .where(Order.created_at >= today_start)
+        .where(Order.created_at < today_end)
+        .group_by(OrderItem.product_id)
+        .order_by(func.count(OrderItem.id).desc())
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    row = result.first()
+
+    if row:
+        product = await product_repo.get_with_ingredients(row.product_id)
+        if product:
+            return _build_product_read(product)
+
+    # Fallback: random available product
+    stmt = (
+        select(Product)
+        .where(Product.is_available == True)
+        .order_by(func.random())
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    product = result.scalars().first()
+    if not product:
+        raise NotFoundError("No hay productos disponibles")
+
+    product = await product_repo.get_with_ingredients(product.id)
+    return _build_product_read(product)
 
 
 @router.get("/{product_id}/stock", response_model=StockDetail)

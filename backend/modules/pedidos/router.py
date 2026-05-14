@@ -4,10 +4,16 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.auth import get_current_user, require_permission
 from backend.core.database import get_db
-from backend.core.enums import OrderStatus
-from backend.core.exceptions import NotFoundError
+from backend.core.enums import OrderStatus, UserRole
+from backend.core.exceptions import ForbiddenError, NotFoundError
 from backend.core.permissions import Permission
-from backend.modules.pedidos.schemas import PedidoCreate, PedidoUpdateStatus, PedidoRead, PedidoList
+from backend.modules.pedidos.schemas import (
+    OrderHistoryRead,
+    PedidoCreate,
+    PedidoList,
+    PedidoRead,
+    PedidoUpdateStatus,
+)
 from backend.modules.pedidos.repository import PedidoRepository
 from backend.modules.pedidos.service import OrderService
 from backend.modules.productos.repository import ProductRepository
@@ -72,10 +78,31 @@ async def create_order(
 async def update_order_status(
     order_id: UUID,
     data: PedidoUpdateStatus,
-    _: Annotated[dict, Depends(require_permission(Permission.ORDER_UPDATE_STATUS))],
+    current_user: Annotated[dict, Depends(require_permission(Permission.ORDER_UPDATE_STATUS))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     repo = PedidoRepository(db)
     product_repo = ProductRepository(db)
     service = OrderService(repo, product_repo)
-    return await service.update_status(order_id, data.status)
+    user_id = UUID(current_user["user_id"])
+    return await service.update_status(
+        order_id, data.status, changed_by=user_id, reason=data.reason
+    )
+
+
+@router.get("/{order_id}/history", response_model=list[OrderHistoryRead])
+async def get_order_history(
+    order_id: UUID,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    repo = PedidoRepository(db)
+    order = await repo.get(order_id)
+    if not order:
+        raise NotFoundError(f"Order {order_id} not found")
+    user_id = UUID(current_user["user_id"])
+    if order.user_id != user_id:
+        if UserRole(current_user["role"]) != UserRole.ADMIN:
+            raise ForbiddenError("Access denied")
+    history = await repo.get_history(order_id)
+    return history

@@ -1,37 +1,98 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { useOrderDetail } from '@features/orders/hooks/useOrders'
+import { useOrderDetail, useOrderHistory } from '@features/orders/hooks/useOrders'
 import { OrderTimeline } from '@features/orders/OrderTimeline'
 import { PaymentStatus } from '@features/orders/PaymentStatus'
+import { OrderHistory } from '@features/orders/OrderHistory'
+import { STATUS_LABELS, type OrderStatus } from '@shared/constants/orderStatus'
+import { CONFIG } from '@shared/config/brand'
+
+/* ── Mesa-style status badge ── */
+const STATUS_MESA_STYLES: Record<string, React.CSSProperties> = {
+  pendiente: {
+    background: 'rgba(255,201,58,0.18)',
+    color: '#7A5500',
+  },
+  confirmado: {
+    background: 'rgba(94,138,58,0.12)',
+    color: 'var(--leaf)',
+  },
+  preparando: {
+    background: 'rgba(201,166,240,0.18)',
+    color: '#4A2D7A',
+  },
+  enviado: {
+    background: 'rgba(94,138,58,0.12)',
+    color: 'var(--leaf)',
+  },
+  entregado: {
+    background: 'rgba(94,138,58,0.18)',
+    color: '#2D5E1A',
+  },
+  cancelado: {
+    background: 'rgba(230,57,70,0.12)',
+    color: 'var(--warm-red)',
+  },
+}
 
 function SkeletonBlock() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse space-y-4">
-      <div className="h-6 w-48 bg-gray-200 rounded" />
-      <div className="space-y-2">
-        <div className="h-4 w-full bg-gray-100 rounded" />
-        <div className="h-4 w-3/4 bg-gray-100 rounded" />
-        <div className="h-4 w-1/2 bg-gray-100 rounded" />
+    <div
+      style={{
+        background: 'var(--bg-elevated)',
+        borderRadius: 'var(--r-lg)',
+        padding: 24,
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
+      <div
+        style={{
+          width: 180,
+          height: 20,
+          borderRadius: 6,
+          marginBottom: 16,
+          background:
+            'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.4s ease-in-out infinite',
+        }}
+      />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div
+          style={{
+            width: '100%',
+            height: 14,
+            borderRadius: 6,
+            background:
+              'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.4s ease-in-out infinite 0.1s',
+          }}
+        />
+        <div
+          style={{
+            width: '75%',
+            height: 14,
+            borderRadius: 6,
+            background:
+              'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.4s ease-in-out infinite 0.2s',
+          }}
+        />
+        <div
+          style={{
+            width: '55%',
+            height: 14,
+            borderRadius: 6,
+            background:
+              'linear-gradient(90deg, var(--surface) 25%, var(--surface-warm) 50%, var(--surface) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.4s ease-in-out infinite 0.3s',
+          }}
+        />
       </div>
     </div>
   )
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pendiente: 'Pendiente',
-  confirmado: 'Confirmado',
-  preparando: 'Preparando',
-  enviado: 'Enviado',
-  entregado: 'Entregado',
-  cancelado: 'Cancelado',
-}
-
-const STATUS_STYLES: Record<string, string> = {
-  pendiente: 'bg-yellow-100 text-yellow-800',
-  confirmado: 'bg-blue-100 text-blue-800',
-  preparando: 'bg-purple-100 text-purple-800',
-  enviado: 'bg-cyan-100 text-cyan-800',
-  entregado: 'bg-green-100 text-green-800',
-  cancelado: 'bg-red-100 text-red-800',
 }
 
 const OrderDetailPage = () => {
@@ -41,45 +102,132 @@ const OrderDetailPage = () => {
   const isNewOrder = searchParams.get('new') === 'true'
 
   const { data: order, isLoading, isError, refetch } = useOrderDetail(id)
+  const { data: history } = useOrderHistory(id)
 
-  // Post-checkout success banner
+  // Post-checkout success banner — remove the query param after showing
   if (isNewOrder && order && !isLoading) {
-    // Remove the query param after showing banner once
     window.history.replaceState({}, '', `/orders/${id}`)
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="container" style={{ paddingTop: 32, paddingBottom: 32 }}>
       {/* Back button */}
       <button
         type="button"
         onClick={() => navigate('/orders')}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 13.5,
+          color: 'var(--ink-2)',
+          marginBottom: 24,
+          padding: '6px 12px',
+          borderRadius: 999,
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--line)',
+          cursor: 'pointer',
+          transition: 'all 180ms',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--ink-3)'
+          e.currentTarget.style.color = 'var(--ink-1)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--line)'
+          e.currentTarget.style.color = 'var(--ink-2)'
+        }}
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M15 19l-7-7 7-7" />
         </svg>
         Volver a mis pedidos
       </button>
 
       {/* Success banner (post-checkout) */}
       {order && isNewOrder && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-5 mb-6 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        <div
+          style={{
+            background: 'rgba(94,138,58,0.08)',
+            border: '1px solid rgba(94,138,58,0.2)',
+            borderRadius: 'var(--r-lg)',
+            padding: 20,
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            animation: 'float-up 0.5s var(--ease-spring)',
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: 'rgba(94,138,58,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              animation: 'pulse-soft 0.6s var(--ease-spring) 0.3s',
+            }}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--leaf)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 12l5 5L20 6" />
             </svg>
           </div>
           <div>
-            <p className="font-semibold text-green-800">¡Pedido confirmado!</p>
-            <p className="text-sm text-green-600">Tu pedido #{order.id.slice(-8).toUpperCase()} fue registrado con éxito.</p>
+            <p
+              style={{
+                fontWeight: 600,
+                fontSize: 15,
+                color: 'var(--leaf)',
+                margin: 0,
+              }}
+            >
+              ¡Pedido confirmado!
+            </p>
+            <p
+              style={{
+                fontSize: 13,
+                color: '#3D5E22',
+                margin: '2px 0 0',
+              }}
+            >
+              Tu pedido #{order.id.slice(-8).toUpperCase()} fue registrado con
+              éxito.
+            </p>
           </div>
         </div>
       )}
 
       {/* Loading state */}
       {isLoading && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <style>{`
+            @keyframes shimmer {
+              from { background-position: 200% 0; }
+              to { background-position: -200% 0; }
+            }
+          `}</style>
           <SkeletonBlock />
           <SkeletonBlock />
           <SkeletonBlock />
@@ -88,14 +236,65 @@ const OrderDetailPage = () => {
 
       {/* Error state */}
       {isError && (
-        <div className="text-center py-16">
-          <p className="text-gray-500 mb-4">
-            {id ? 'No encontramos este pedido' : 'Ocurrió un error al cargar el pedido'}
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '48px 24px',
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 'var(--r-lg)',
+              background: 'rgba(230,57,70,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--warm-red)',
+              margin: '0 auto 16px',
+            }}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <p
+            style={{
+              fontSize: 15,
+              fontWeight: 500,
+              color: 'var(--ink-1)',
+              margin: '0 0 4px',
+            }}
+          >
+            {id ? 'No encontramos este pedido' : 'Ocurrió un error'}
+          </p>
+          <p
+            style={{
+              fontSize: 13.5,
+              color: 'var(--ink-3)',
+              margin: '0 0 20px',
+            }}
+          >
+            {id
+              ? 'El pedido que buscás no existe o fue eliminado'
+              : 'No pudimos cargar el pedido'}
           </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
+            className="btn btn-primary"
           >
             Reintentar
           </button>
@@ -104,16 +303,48 @@ const OrderDetailPage = () => {
 
       {/* Order detail */}
       {order && !isLoading && (
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-start justify-between mb-1">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Header card */}
+          <div
+            style={{
+              background: 'var(--bg-elevated)',
+              borderRadius: 'var(--r-lg)',
+              padding: 24,
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: 16,
+                gap: 16,
+              }}
+            >
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Pedido #{order.id.slice(-8).toUpperCase()}
+                <h1
+                  style={{
+                    fontFamily: 'var(--ff-display)',
+                    fontWeight: 600,
+                    fontSize: 22,
+                    color: 'var(--ink-1)',
+                    margin: 0,
+                  }}
+                >
+                  Pedido{' '}
+                  <span style={{ fontFamily: 'var(--ff-mono)', fontWeight: 500 }}>
+                    #{order.id.slice(-8).toUpperCase()}
+                  </span>
                 </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  {new Date(order.created_at).toLocaleDateString('es-AR', {
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--ink-3)',
+                    margin: '6px 0 0',
+                  }}
+                >
+                  {new Date(order.created_at).toLocaleDateString(CONFIG.locale, {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
@@ -123,46 +354,158 @@ const OrderDetailPage = () => {
                 </p>
               </div>
               <span
-                className={`text-sm font-medium px-3 py-1.5 rounded-full ${STATUS_STYLES[order.status] ?? 'bg-gray-100 text-gray-800'}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '6px 14px',
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  ...(STATUS_MESA_STYLES[order.status] ?? {
+                    background: 'var(--surface)',
+                    color: 'var(--ink-2)',
+                  }),
+                }}
               >
-                {STATUS_LABELS[order.status] ?? order.status}
+                {STATUS_LABELS[order.status as OrderStatus] ?? order.status}
               </span>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-              <span className="text-sm text-gray-500">Total</span>
-              <span className="text-2xl font-bold text-gray-900">
-                ${order.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: 16,
+                borderTop: '1px solid var(--line)',
+              }}
+            >
+              <span style={{ fontSize: 14, color: 'var(--ink-3)' }}>Total</span>
+              <span
+                className="num"
+                style={{
+                  fontFamily: 'var(--ff-display)',
+                  fontWeight: 600,
+                  fontSize: 26,
+                  color: 'var(--ink-1)',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {CONFIG.currency}
+                {order.total.toLocaleString(CONFIG.locale, {
+                  minimumFractionDigits: 2,
+                })}
               </span>
             </div>
           </div>
 
           {/* Status Timeline */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          <div
+            style={{
+              background: 'var(--bg-elevated)',
+              borderRadius: 'var(--r-lg)',
+              padding: 24,
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                margin: '0 0 16px',
+              }}
+            >
               Estado del pedido
-            </h2>
+            </h3>
             <OrderTimeline status={order.status} />
           </div>
 
           {/* Items */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+          <div
+            style={{
+              background: 'var(--bg-elevated)',
+              borderRadius: 'var(--r-lg)',
+              padding: 24,
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                margin: '0 0 16px',
+              }}
+            >
               Productos
-            </h2>
-            <div className="divide-y divide-gray-100">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Producto #{item.product_id.slice(-6).toUpperCase()}
+            </h3>
+            <div>
+              {order.items.map((item, index) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '14px 0',
+                    borderTop: index === 0 ? 'none' : '1px solid var(--line)',
+                  }}
+                >
+                  {/* FoodArt placeholder */}
+                  <div
+                    className="food-art citrus"
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 'var(--r-md)',
+                      flexShrink: 0,
+                    }}
+                  />
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: 'var(--ink-1)',
+                        margin: 0,
+                      }}
+                    >
+                      Producto #
+                      {item.product_id.slice(-6).toUpperCase()}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      ${item.unit_price.toLocaleString('es-AR', { minimumFractionDigits: 2 })} c/u × {item.quantity}
+                    <p
+                      style={{
+                        fontSize: 12.5,
+                        color: 'var(--ink-3)',
+                        margin: '2px 0 0',
+                      }}
+                    >
+                      {CONFIG.currency}
+                      {item.unit_price.toLocaleString(CONFIG.locale, {
+                        minimumFractionDigits: 2,
+                      })}{' '}
+                      c/u × {item.quantity}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    ${item.subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                  </p>
+                  <span
+                    className="num"
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 15,
+                      color: 'var(--ink-1)',
+                    }}
+                  >
+                    {CONFIG.currency}
+                    {item.subtotal.toLocaleString(CONFIG.locale, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
                 </div>
               ))}
             </div>
@@ -176,13 +519,34 @@ const OrderDetailPage = () => {
               amount={order.payment.amount}
             />
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <div
+              style={{
+                background: 'var(--bg-elevated)',
+                borderRadius: 'var(--r-lg)',
+                padding: 24,
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-3)',
+                  margin: '0 0 8px',
+                }}
+              >
                 Pago
               </h3>
-              <p className="text-sm text-gray-500">Información de pago no disponible</p>
+              <p style={{ fontSize: 13.5, color: 'var(--ink-3)', margin: 0 }}>
+                Información de pago no disponible
+              </p>
             </div>
           )}
+
+          {/* Order History */}
+          {history && <OrderHistory entries={history} />}
         </div>
       )}
     </div>

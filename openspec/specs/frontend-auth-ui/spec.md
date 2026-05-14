@@ -186,3 +186,117 @@ The frontend SHALL provide reusable validation helper functions for auth forms.
 - **THEN** the validator SHALL check for a valid email format using a regex pattern
 - **AND** the validator SHALL return true/false
 
+### Requirement: Desktop auth screens use centered modal
+
+The system SHALL display desktop auth screens (login, register) as a centered modal at 420px max-width with backdrop-filter blur(6px) and float-up animation.
+
+#### Scenario: Login as centered modal on desktop
+- **WHEN** a user clicks "Iniciar Sesión" on desktop (768px+)
+- **THEN** the system SHALL open a centered modal at 420px max-width
+- **AND** the modal SHALL have `backdrop-filter: blur(6px)` on the overlay
+- **AND** the modal SHALL animate in with the float-up animation
+- **AND** the form SHALL contain all login fields and functionality
+
+#### Scenario: Modal closes on backdrop click
+- **WHEN** a user clicks the backdrop outside the auth modal
+- **THEN** the modal SHALL close
+- **AND** the user remains on the current page
+
+### Requirement: Mobile auth screens use full-screen page
+
+The system SHALL display auth screens as full-screen pages on mobile with the logo at the top.
+
+#### Scenario: Mobile auth shows full-screen page
+- **WHEN** a user clicks "Iniciar Sesión" on mobile (< 768px)
+- **THEN** the system SHALL navigate to a full-screen auth page
+- **AND** the logo SHALL be displayed at the top of the page
+
+### Requirement: Google OAuth button
+
+The system SHALL display a Google OAuth login button when the feature flag is enabled.
+
+#### Scenario: Google OAuth button displayed
+- **WHEN** the Google OAuth feature flag is enabled
+- **THEN** the login form SHALL display a "Continuar con Google" button above the email field
+- **WHEN** the feature flag is disabled
+- **THEN** the button SHALL NOT be displayed
+
+### Requirement: Password strength bar
+
+The system SHALL display a password strength bar with 4 segments that fill as password length grows.
+
+#### Scenario: Password strength bar updates
+- **WHEN** a user types in the password field on the registration form
+- **THEN** a 4-segment strength bar SHALL be displayed below the password field
+- **AND** segment 1 fills at 4+ chars (red)
+- **AND** segment 2 fills at 8+ chars (orange)
+- **AND** segment 3 fills at 12+ chars (yellow)
+- **AND** segment 4 fills with uppercase + digit + special (green)
+
+### Requirement: Password show/hide toggle
+
+The system SHALL provide a show/hide toggle for password fields.
+
+#### Scenario: Password visibility toggle
+- **WHEN** a user views a password input field
+- **THEN** an eye icon toggle SHALL be displayed inside or next to the input
+- **AND** clicking the toggle SHALL alternate between showing and hiding the password text
+
+### Requirement: "Olvidaste tu contraseña?" link in login form
+
+The login form SHALL include a "Olvidaste tu contraseña?" link.
+
+#### Scenario: Forgot password link in login
+- **WHEN** a user views the login form
+- **THEN** a "Olvidaste tu contraseña?" link SHALL be displayed below the password field
+- **AND** clicking it SHALL open the forgot password form
+- **AND** on desktop modal, the forgot password form SHALL replace the login form content within the modal
+
+### Requirement: Login redirect — desktop shows modal on any page
+
+On desktop, clicking "Iniciar Sesión" from any page SHALL show the login modal inline without page navigation.
+
+#### Scenario: Login modal on any page
+- **WHEN** a user clicks "Iniciar Sesión" from any page on desktop
+- **THEN** the login modal SHALL open on the current page
+- **AND** no page navigation SHALL occur
+- **AND** after successful login, the modal SHALL close and the user remains on the same page
+
+### Requirement: Auth pages SHALL use responsive layout
+
+**Old:** (none — new requirement)
+
+**New:** The system SHALL display auth pages (login, register, forgot password) as a centered modal at 420px with backdrop blur on desktop and as a full-screen page on mobile.
+
+#### Scenario: Desktop shows centered modal
+- **WHEN** the user opens login or register on desktop (768px+)
+- **THEN** a centered modal SHALL display at 420px with backdrop blur
+
+#### Scenario: Mobile shows full-screen page
+- **WHEN** the user opens login or register on mobile (< 768px)
+- **THEN** a full-screen layout SHALL display without backdrop
+
+### Requirement: Auth forms SHALL include password features
+
+**Old:** (none — new requirement)
+
+**New:** The system SHALL display a 4-segment password strength bar that updates in real-time on the register form, and a show/hide toggle on all password fields.
+
+#### Scenario: Password strength bar displays
+- **WHEN** the user types a password in register form
+- **THEN** a 4-segment strength bar SHALL update in real-time
+
+#### Scenario: Password visibility toggles
+- **WHEN** the user clicks the show/hide toggle
+- **THEN** the password field SHALL toggle between text and password input type
+
+### Requirement: Auth SHALL include Google OAuth
+
+**Old:** (none — new requirement)
+
+**New:** The system SHALL display a Google OAuth button as an alternative authentication method on both login and register pages.
+
+#### Scenario: Google login button appears
+- **WHEN** the user views login or register page
+- **THEN** a Google OAuth button SHALL display as alternative authentication
+

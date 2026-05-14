@@ -1,6 +1,6 @@
 # Backend Logging Specification
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Structured Logging
 

@@ -61,3 +61,46 @@ The system SHALL support pagination for the order history, with configurable pag
 - **THEN** an "Anterior" button SHALL appear
 - **AND** clicking it SHALL load the previous page of results
 
+### Requirement: Order cards use Mesa styling
+
+The order history page SHALL style order cards using Mesa Design System typography and color tokens.
+
+#### Scenario: Order card Mesa styling
+- **WHEN** an authenticated customer views order history
+- **THEN** each order card SHALL display the order ID in mono-font (`font-mono` or equivalent)
+- **AND** the status badge SHALL use Mesa color variants: soft (pendiente), leaf (confirmado), red (cancelado), yellow (en preparación)
+- **AND** the total SHALL be rendered with the `.num` class for numeric styling
+
+### Requirement: Status filter pills use Mesa styling
+
+The system SHALL style status filter pills using Mesa pill styling.
+
+#### Scenario: Mesa-styled filter pills
+- **WHEN** a customer views order history
+- **THEN** the status filter pills SHALL use Mesa pill styling (`.chip` class)
+- **AND** the active pill SHALL be visually highlighted
+
+### Requirement: Empty state uses Mesa EmptyState component
+
+The system SHALL use the Mesa EmptyState component for the empty order history state.
+
+#### Scenario: Mesa EmptyState for no orders
+- **WHEN** a customer with no orders views `/orders`
+- **THEN** the page SHALL display the Mesa EmptyState component
+- **AND** the message SHALL read "No tenés pedidos todavía"
+- **AND** a "Ver productos" button SHALL navigate to the home page
+
+### Requirement: Order history SHALL display Mesa-styled cards
+
+**Old:** (none — new requirement)
+
+**New:** The system SHALL display order history as Mesa-styled cards each showing status badge, total amount, date, and order ID. Status filter pills SHALL allow narrowing the list.
+
+#### Scenario: Orders display as styled cards
+- **WHEN** the user views their order history
+- **THEN** each order SHALL display as a Mesa-styled card with status badge, total, and date
+
+#### Scenario: Filter pills narrow order list
+- **WHEN** the user clicks a status filter pill
+- **THEN** the order list SHALL filter to show only orders matching that status
+

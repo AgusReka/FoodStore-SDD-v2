@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { get } from '@shared/api/client'
 import { ENDPOINTS } from '@shared/api/endpoints'
-import type { ProductRaw, Product } from '@entities/product'
+import type { ProductRaw } from '@entities/product'
 import { normalizeProduct } from '@entities/product'
 import { customerProductsKeys } from './useCustomerProducts'
 

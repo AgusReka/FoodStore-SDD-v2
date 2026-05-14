@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@shared/hooks/useAuth'
+import { useBreakpoint } from '@shared/hooks/useBreakpoint'
+import { CONFIG } from '@shared/config/brand'
 
 const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams()
@@ -17,6 +19,9 @@ const VerifyEmailPage = () => {
     sendVerification,
     isSendingVerification,
   } = useAuth()
+  const { isMobile } = useBreakpoint()
+
+  const inputClass = "w-full h-12 px-4 bg-[var(--surface)] border border-transparent rounded-[var(--r-sm)] text-sm text-[var(--ink-1)] placeholder:text-[var(--ink-3)] transition-all duration-[var(--d-fast)] ease-[var(--ease-out)] focus:outline-none focus:bg-[var(--bg-elevated)] focus:border-[var(--brand)] focus:shadow-[0_0_0_4px_rgba(255,122,0,0.12)]"
 
   useEffect(() => {
     if (token) {
@@ -26,149 +31,171 @@ const VerifyEmailPage = () => {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (token) {
-    if (isVerifying) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Verificando Email
-            </h1>
-            <p className="text-gray-600">
-              Por favor espera mientras verificamos tu email...
-            </p>
-          </div>
-        </div>
-      )
-    }
+  const verifyingContent = (
+    <div className="text-center py-8">
+      <div className="w-10 h-10 mx-auto mb-6 rounded-full border-3 border-[var(--brand)] border-t-transparent animate-spin" style={{ borderWidth: 3 }} />
+      <h1 className="text-[var(--ink-1)] text-[22px] font-semibold font-[var(--ff-display)] text-center mb-2">
+        Verificando Email
+      </h1>
+      <p className="text-sm text-[var(--ink-3)] text-center">
+        Por favor espera mientras verificamos tu email...
+      </p>
+    </div>
+  )
 
-    if (verifyEmailData || verified) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Email Verificado
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Email verificado exitosamente.
-            </p>
-            <Link
-              to="/login"
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Iniciar Sesión
-            </Link>
-          </div>
-        </div>
-      )
-    }
+  const verifiedContent = (
+    <>
+      <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[var(--leaf)] flex items-center justify-center">
+        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h1 className="text-[var(--ink-1)] text-[22px] font-semibold font-[var(--ff-display)] text-center mb-2">
+        Email Verificado
+      </h1>
+      <p className="text-sm text-[var(--ink-3)] text-center mb-6">
+        Tu email fue verificado exitosamente.
+      </p>
+      <Link
+        to="/login"
+        className="block w-full h-12 leading-[48px] text-center rounded-[var(--r-pill)] bg-[var(--brand)] text-white font-medium text-sm shadow-[var(--shadow-brand)] hover:bg-[var(--brand-hover)] transition-all duration-[var(--d-fast)]"
+      >
+        Iniciar Sesión
+      </Link>
+    </>
+  )
 
-    if (verifyEmailError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Error de Verificación
-            </h1>
-            <p className="text-gray-600 mb-6">
-              {verifyEmailError.message || 'El enlace de verificación es inválido o ha expirado.'}
-            </p>
-            <Link
-              to="/verify-email"
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Reenviar verificación
-            </Link>
-          </div>
+  const errorContent = (
+    <>
+      <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[var(--warm-red)] flex items-center justify-center">
+        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </div>
+      <h1 className="text-[var(--ink-1)] text-[22px] font-semibold font-[var(--ff-display)] text-center mb-2">
+        Error de Verificación
+      </h1>
+      <p className="text-sm text-[var(--ink-3)] text-center mb-6">
+        {verifyEmailError instanceof Error ? verifyEmailError.message : 'El enlace de verificación es inválido o ha expirado.'}
+      </p>
+      <Link
+        to="/verify-email"
+        className="block w-full h-12 leading-[48px] text-center rounded-[var(--r-pill)] bg-[var(--brand)] text-white font-medium text-sm shadow-[var(--shadow-brand)] hover:bg-[var(--brand-hover)] transition-all duration-[var(--d-fast)]"
+      >
+        Reenviar verificación
+      </Link>
+    </>
+  )
+
+  const sendSuccessContent = (
+    <>
+      <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[var(--leaf)] flex items-center justify-center">
+        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h1 className="text-[var(--ink-1)] text-[22px] font-semibold font-[var(--ff-display)] text-center mb-2">
+        Verificación Enviada
+      </h1>
+      <p className="text-sm text-[var(--ink-3)] text-center mb-6">
+        Si el email existe, recibirás un enlace de verificación.
+      </p>
+      <Link
+        to="/login"
+        className="block w-full h-12 leading-[48px] text-center rounded-[var(--r-pill)] bg-[var(--brand)] text-white font-medium text-sm shadow-[var(--shadow-brand)] hover:bg-[var(--brand-hover)] transition-all duration-[var(--d-fast)]"
+      >
+        Iniciar Sesión
+      </Link>
+    </>
+  )
+
+  const formContent = (
+    <>
+      <div className="text-center mb-8">
+        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-[var(--brand)] to-[var(--brand-hover)] flex items-center justify-center shadow-[var(--shadow-brand)]">
+          <span className="text-white text-2xl font-bold leading-none">{CONFIG.logoChar}</span>
         </div>
-      )
-    }
+        <h1 className="text-[var(--ink-1)] text-[22px] font-semibold font-[var(--ff-display)] tracking-[-0.02em] mb-1">
+          Verificar Email
+        </h1>
+        <p className="text-sm text-[var(--ink-3)]">
+          Ingresá tu email para recibir un enlace de verificación.
+        </p>
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          sendVerification({ email })
+            .then(() => setSendSuccess(true))
+            .catch(() => {})
+        }}
+        className="space-y-4"
+      >
+        <div>
+          <input
+            id="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+            placeholder="tu@email.com"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={isSendingVerification}
+          className="btn btn-primary btn-lg w-full"
+        >
+          {isSendingVerification && (
+            <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+              <path d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" fill="white" opacity="0.75" />
+            </svg>
+          )}
+          Enviar Verificación
+        </button>
+      </form>
+
+      <p className="mt-6 text-center">
+        <Link to="/login" className="text-sm font-medium" style={{ color: 'var(--brand)' }}>
+          ← Volver a Iniciar Sesión
+        </Link>
+      </p>
+    </>
+  )
+
+  let content
+  if (token && isVerifying) {
+    content = verifyingContent
+  } else if (token && (verifyEmailData || verified)) {
+    content = verifiedContent
+  } else if (token && verifyEmailError) {
+    content = errorContent
+  } else if (sendSuccess) {
+    content = sendSuccessContent
+  } else {
+    content = formContent
   }
 
-  if (sendSuccess) {
+  if (isMobile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8 text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-            <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Verificación Enviada
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Si el email existe, recibirás un enlace de verificación.
-          </p>
-          <Link
-            to="/login"
-            className="text-blue-600 hover:text-blue-800 font-medium"
-          >
-            Iniciar Sesión
-          </Link>
-        </div>
+      <div className="min-h-screen bg-[var(--bg-elevated)] p-6 flex flex-col justify-center" style={{ fontFamily: 'var(--ff-body)' }}>
+        {content}
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
-          Verificar Email
-        </h1>
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <p className="text-gray-600 mb-6 text-sm">
-            Ingresa tu email para recibir un enlace de verificación.
-          </p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              sendVerification({ email })
-                .then(() => setSendSuccess(true))
-                .catch(() => {})
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="tu@email.com"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isSendingVerification}
-              className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSendingVerification ? 'Enviando...' : 'Enviar Verificación'}
-            </button>
-          </form>
-          <p className="mt-6 text-center text-sm text-gray-600">
-            <Link to="/login" className="text-blue-600 hover:text-blue-800 font-medium">
-              Volver a Iniciar Sesión
-            </Link>
-          </p>
-        </div>
+    <div className="min-h-screen bg-[var(--bg)] relative flex items-center justify-center p-4" style={{ fontFamily: 'var(--ff-body)' }}>
+      <div className="ambient" />
+      <div className="absolute inset-0 bg-black/25 backdrop-blur-[6px]" />
+      <div
+        className="relative w-full max-w-[420px] bg-[var(--bg-elevated)] rounded-[var(--r-lg)] p-9 shadow-[var(--shadow-float)]"
+        style={{ animation: 'float-up 350ms var(--ease-spring)' }}
+      >
+        {content}
       </div>
     </div>
   )

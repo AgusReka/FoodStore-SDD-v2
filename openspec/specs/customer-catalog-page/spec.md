@@ -72,3 +72,63 @@ The system SHALL support pagination of the product grid with page-based navigati
 - **WHEN** a user changes page while a category filter or search term is active
 - **THEN** the pagination SHALL respect the active filters
 
+### Requirement: Product grid uses stagger entry animation
+
+The product grid SHALL use the `.stagger` CSS class for stagger entry animation when products appear.
+
+#### Scenario: Stagger animation on product cards
+- **WHEN** a user scrolls to the product grid section
+- **THEN** each product card SHALL animate in sequentially using the `.stagger` class
+- **AND** cards SHALL fade and float up with a staggered delay between each card
+
+### Requirement: Product cards use hover lift animation
+
+Product cards SHALL use a hover lift animation (translateY(-4px) and shadow-lg) on mouse hover.
+
+#### Scenario: Hover lift on product card
+- **WHEN** a user hovers over a product card
+- **THEN** the card SHALL translate up by 4px (`transform: translateY(-4px)`)
+- **AND** the card shadow SHALL increase to `shadow-lg` or equivalent
+- **AND** the transition SHALL be smooth (0.2s ease or similar)
+
+### Requirement: Filter toggle chips row below CategoryRail
+
+The system SHALL display a row of filter toggle chips below the CategoryRail.
+
+#### Scenario: Filter chips below category rail
+- **WHEN** a user views the catalog page
+- **THEN** a row of toggle chips SHALL be displayed below the CategoryRail
+- **AND** the chips SHALL include: "Bajo 20min", "Vegano", "Trending", "Nuevos"
+- **AND** each chip SHALL use the `.chip` class with toggle behavior
+
+#### Scenario: Filter chip toggle updates grid
+- **WHEN** a user clicks a filter chip
+- **THEN** the chip SHALL toggle to active state
+- **AND** the product grid SHALL update to show only matching products
+
+### Requirement: Grid responsive with minmax
+
+The product grid SHALL be responsive: mobile 1-2 columns, desktop 3-4 columns using `minmax(248px, 1fr)`.
+
+#### Scenario: Mobile grid 1-2 columns
+- **WHEN** a user views the product grid on mobile (< 768px)
+- **THEN** the grid SHALL display 1 column on small screens and 2 columns on medium screens
+
+#### Scenario: Desktop grid 3-4 columns
+- **WHEN** a user views the product grid on desktop (1024px+)
+- **THEN** the grid SHALL display 3-4 columns using `grid-template-columns: repeat(auto-fill, minmax(248px, 1fr))`
+
+### Requirement: Catalog page SHALL display products with stagger animation
+
+**Old:** (none — new requirement)
+
+**New:** The system SHALL display the product catalog with stagger animation where each card fades in sequentially. Filter chips SHALL toggle product visibility by category (Bajo 20min, Vegano, Trending, Nuevos).
+
+#### Scenario: Products appear with stagger animation
+- **WHEN** the catalog page loads
+- **THEN** each product card SHALL fade in sequentially with a stagger delay
+
+#### Scenario: Filter chips toggle product visibility
+- **WHEN** the user clicks a filter chip
+- **THEN** the product grid SHALL update to show only matching products
+

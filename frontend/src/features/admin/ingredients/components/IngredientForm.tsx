@@ -17,9 +17,7 @@ interface IngredientFormProps {
   selectedIngredient: Ingredient | null
 }
 
-export function IngredientForm({ formData, onChange, errors, selectedIngredient }: IngredientFormProps) {
-  const isEditing = !!selectedIngredient
-
+export function IngredientForm({ formData, onChange, errors }: IngredientFormProps) {
   const handleChange = (field: string, value: string | number | null) => {
     onChange({ ...formData, [field]: value ?? null })
   }

@@ -24,6 +24,15 @@ export interface PaymentRead {
   updated_at: string | null
 }
 
+export interface OrderHistoryEntry {
+  id: string
+  from_status: string
+  to_status: string
+  changed_by: string | null
+  reason: string | null
+  created_at: string
+}
+
 export interface OrderRead {
   id: string
   user_id: string
@@ -59,6 +68,17 @@ export function useOrderDetail(orderId: string | undefined) {
     queryKey: queryKeys.orders.detail(orderId!),
     queryFn: async () => {
       const response = await get<OrderRead>(ENDPOINTS.ORDERS_DETAIL(orderId!))
+      return response.data
+    },
+    enabled: !!orderId,
+  })
+}
+
+export function useOrderHistory(orderId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.orders.history(orderId!),
+    queryFn: async () => {
+      const response = await get<OrderHistoryEntry[]>(ENDPOINTS.ORDERS_HISTORY(orderId!))
       return response.data
     },
     enabled: !!orderId,
