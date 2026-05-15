@@ -102,6 +102,7 @@ const OrderDetailPage = () => {
   const [searchParams] = useSearchParams()
   const isNewOrder = searchParams.get('new') === 'true'
   const mpError = searchParams.get('mp-error') === 'true'
+  const isPendingPayment = searchParams.get('pending') === 'true'
 
   const { data: order, isLoading, isError, refetch } = useOrderDetail(id)
   const { data: history } = useOrderHistory(id)
@@ -263,8 +264,76 @@ const OrderDetailPage = () => {
         </div>
       )}
 
-      {/* Success banner (post-checkout) */}
-      {order && isNewOrder && (
+      {/* Pending payment banner (efectivo / transferencia — post-checkout) */}
+      {order && isNewOrder && isPendingPayment && (
+        <div
+          style={{
+            background: 'rgba(255,201,58,0.12)',
+            border: '1px solid rgba(255,201,58,0.25)',
+            borderRadius: 'var(--r-lg)',
+            padding: 20,
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            animation: 'float-up 0.5s var(--ease-spring)',
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: 'rgba(255,201,58,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#7A5500"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div>
+            <p
+              style={{
+                fontWeight: 600,
+                fontSize: 15,
+                color: '#7A5500',
+                margin: 0,
+              }}
+            >
+              ¡Pedido registrado!
+            </p>
+            <p
+              style={{
+                fontSize: 13,
+                color: '#5A3F00',
+                margin: '2px 0 0',
+              }}
+            >
+              Tu pedido #{order.id.slice(-8).toUpperCase()} fue registrado con
+              éxito. El pago quedó pendiente — cuando el local confirme tu pedido
+              te avisaremos.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Success banner (MP post-checkout) */}
+      {order && isNewOrder && !isPendingPayment && (
         <div
           style={{
             background: 'rgba(94,138,58,0.08)',

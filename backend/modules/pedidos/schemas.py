@@ -3,6 +3,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 from backend.core.enums import OrderStatus
+from backend.modules.pagos.schemas import PagoRead
 
 
 class OrderItemCreate(BaseModel):
@@ -51,6 +52,7 @@ class PedidoRead(BaseModel):
     total: float
     currency: str
     items: list[OrderItemRead]
+    payment: PagoRead | None = None
     created_at: datetime
     updated_at: datetime | None = None
 

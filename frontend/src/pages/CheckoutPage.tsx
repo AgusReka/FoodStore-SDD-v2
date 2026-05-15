@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useCartStore } from '@shared/stores/cartStore'
@@ -72,9 +72,14 @@ const CheckoutPage = () => {
   const [isMpRedirecting, setIsMpRedirecting] = useState(false)
   const [paymentStep, setPaymentStep] = useState<'idle' | 'creating' | 'redirecting' | 'done'>('idle')
 
-  // Redirect to cart if empty
+  // Redirect to home if cart becomes empty (checkout completed or all removed).
+  // We use refs to prevent this from firing during an intentional order redirect.
+  const isProcessingRef = useRef(false)
+
   useEffect(() => {
-    if (items.length === 0) {
+    // Skip redirect if we're in the middle of confirming an order
+    // (navigate to /orders/{id} will unmount this component anyway)
+    if (items.length === 0 && !isProcessingRef.current) {
       navigate('/', { replace: true })
     }
   }, [items, navigate])
@@ -214,13 +219,17 @@ const CheckoutPage = () => {
 
     // Direct payment methods (efectivo / transferencia): create order + payment
     setPaymentStep('creating')
+    isProcessingRef.current = true
     try {
       const order = await orderMutation.mutateAsync()
       await paymentMutation.mutateAsync({ pedido_id: order.id })
+      // Navigate FIRST, then clear cart — otherwise the useEffect redirect to /
+      // (line 75-80) fires before our navigate takes effect.
+      navigate(`/orders/${order.id}?new=true&pending=true`, { replace: true })
       clearCart()
       resetPayment()
-      navigate(`/orders/${order.id}?new=true`, { replace: true })
     } catch (err) {
+      isProcessingRef.current = false
       setPaymentStep('idle')
       if (err instanceof Error) {
         const msg = err.message.toLowerCase()

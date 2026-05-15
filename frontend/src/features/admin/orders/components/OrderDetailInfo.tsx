@@ -98,21 +98,39 @@ export function OrderDetailInfo({ order, isLoading, onStatusClick }: OrderDetail
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                     order.payment.status === 'aprobado' ? 'bg-green-100 text-green-800' :
                     order.payment.status === 'rechazado' ? 'bg-red-100 text-red-800' :
+                    order.payment.status === 'reembolsado' ? 'bg-purple-100 text-purple-800' :
                     order.payment.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {order.payment.status}
+                    {{
+                      aprobado: 'Aprobado',
+                      rechazado: 'Rechazado',
+                      pendiente: 'Pendiente',
+                      reembolsado: 'Reembolsado',
+                    }[order.payment.status] ?? order.payment.status}
                   </span>
                 </dd>
               </div>
               <div className="flex justify-between text-sm">
                 <dt className="text-gray-500">Método</dt>
-                <dd className="text-gray-700 capitalize">{order.payment.payment_method?.replace('_', ' ')}</dd>
+                <dd className="text-gray-700">
+                  {{
+                    efectivo: 'Efectivo',
+                    transferencia: 'Transferencia bancaria',
+                    mercadopago: 'Mercado Pago',
+                  }[order.payment.payment_method] ?? order.payment.payment_method}
+                </dd>
               </div>
               <div className="flex justify-between text-sm">
                 <dt className="text-gray-500">Monto</dt>
                 <dd className="font-medium text-gray-900">{formatCurrency(order.payment.amount)}</dd>
               </div>
+              {order.payment.payment_method === 'mercadopago' && order.payment.mp_payment_id && (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-gray-500">MP Payment ID</dt>
+                  <dd className="font-mono text-xs text-gray-700">{order.payment.mp_payment_id}</dd>
+                </div>
+              )}
             </dl>
           ) : (
             <p className="text-sm text-gray-400">Sin información de pago</p>

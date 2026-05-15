@@ -34,7 +34,11 @@ class PedidoRepository(BaseRepository[Order]):
         return list(result.scalars().all())
 
     async def get_with_items(self, order_id: UUID) -> Order | None:
-        stmt = select(Order).where(Order.id == order_id).options(selectinload(Order.items))
+        stmt = (
+            select(Order)
+            .where(Order.id == order_id)
+            .options(selectinload(Order.items), selectinload(Order.payment))
+        )
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
@@ -42,7 +46,7 @@ class PedidoRepository(BaseRepository[Order]):
         stmt = (
             select(Order)
             .where(Order.id == order_id)
-            .options(selectinload(Order.items))
+            .options(selectinload(Order.items), selectinload(Order.payment))
             .with_for_update()
         )
         result = await self.session.execute(stmt)
