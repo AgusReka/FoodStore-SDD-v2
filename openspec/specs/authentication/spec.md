@@ -37,6 +37,11 @@ The system SHALL return the authenticated user's profile from their access token
 - **WHEN** a GET request is sent to `/api/v1/auth/me` without an auth header
 - **THEN** the system SHALL return a 401 Unauthorized error
 
+#### Scenario: Get profile with valid token but deleted user
+- **WHEN** a GET request is sent to `/api/v1/auth/me` with a valid JWT whose `sub` user no longer exists in the database
+- **THEN** the system SHALL return a 401 Unauthorized error
+- **AND** the system SHALL NOT return 404
+
 ### Requirement: User logout
 
 The system SHALL support logout by revoking the refresh token.
@@ -128,16 +133,12 @@ The system SHALL enforce password strength rules during registration, password r
 
 The frontend login page SHALL integrate with the backend login API and handle authentication tokens.
 
-#### Scenario: Login via LoginForm stores tokens
-- **WHEN** the user submits valid credentials via `LoginForm`
-- **THEN** `authStore.login()` SHALL be called with email and password
-- **AND** on success, the user SHALL be redirected according to the redirect strategy
-- **AND** the access token SHALL be persisted to localStorage
-
-#### Scenario: Login error displays backend message
-- **WHEN** the backend returns 401 Unauthorized
-- **THEN** the LoginForm SHALL display "Email o contraseña incorrectos" or equivalent
-- **AND** the password field SHALL be cleared
+#### Scenario: Logout clears TanStack Query cache
+- **WHEN** the user clicks "Cerrar sesión"
+- **THEN** `authStore.logout()` SHALL be called
+- **AND** the TanStack Query client cache SHALL be cleared
+- **AND** the user SHALL be redirected to `/login`
+- **AND** when a new user logs in, the query cache SHALL fetch fresh data from the API (not serve stale cached data)
 
 ### Requirement: Frontend registration flow integration
 
@@ -198,4 +199,43 @@ The `get_current_user` dependency SHALL include the user's role from the JWT pay
 - **THEN** the system SHALL return a 401 Unauthorized error with "Invalid token structure"
 
 ---
+
+### Requirement: Frontend registration redirects to login
+
+The frontend SHALL redirect to the login page after successful registration, without automatically logging in.
+
+#### Scenario: Register redirects to login
+- **WHEN** the user submits valid registration data
+- **THEN** `authStore.register()` or the `useAuth` register mutation SHALL be called
+- **AND** on success, the user SHALL be redirected to `/login?email=<email>`
+- **AND** the system SHALL NOT call `login()` or store any authentication tokens
+
+### Requirement: ProductDetailModal auth check
+
+The ProductDetailModal SHALL redirect unauthenticated users to the login page when they attempt to add a product to cart.
+
+#### Scenario: Modal redirects to login
+- **WHEN** an unauthenticated user clicks "Agregar" in the ProductDetailModal
+- **THEN** the modal SHALL close
+- **AND** the user SHALL be redirected to `/login?redirect=/productos/<product-id>`
+
+### Requirement: Frontend stale token auto-recovery
+
+The frontend SHALL automatically recover from stale/invalid authentication tokens by clearing auth state and redirecting to login when profile fetch fails for any reason.
+
+#### Scenario: ProtectedRoute clears stale token on profile fetch failure
+- **WHEN** the frontend loads with a persisted `accessToken` that is invalid or whose user no longer exists
+- **AND** `fetchProfile()` receives any error response (4xx or 5xx or network error)
+- **THEN** the authStore SHALL clear `accessToken`, `refreshToken`, and `user`
+- **AND** the user SHALL be redirected to `/login`
+
+#### Scenario: ProtectedRoute does not infinitely retry failed profile fetch
+- **WHEN** `fetchProfile()` fails
+- **THEN** ProtectedRoute SHALL NOT re-trigger `fetchProfile()` on subsequent renders
+- **AND** the user SHALL see the login page (not an infinite spinner)
+
+#### Scenario: LoginPage does not redirect with stale token
+- **WHEN** the user navigates to `/login` while `accessToken` exists but `user` is null
+- **THEN** the LoginPage SHALL NOT redirect to home
+- **AND** the user SHALL be able to log in again
 

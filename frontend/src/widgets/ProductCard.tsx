@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Product } from '@entities/product'
 import { useCartStore } from '@shared/stores/cartStore'
 import { useAuthStore } from '@shared/stores/authStore'
+import { useUiStore } from '@shared/stores/uiStore'
 import { CONFIG } from '@shared/config/brand'
 
 interface ProductCardProps {
@@ -69,6 +70,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
   const accessToken = useAuthStore((s) => s.accessToken)
+  const addToast = useUiStore((s) => s.addToast)
+  const setCartOpen = useUiStore((s) => s.setCartOpen)
   const artVariant = hashArt(product.id)
   const isAvailable = product.isAvailable && (product.stockDisponible == null || product.stockDisponible > 0)
 
@@ -85,7 +88,9 @@ export function ProductCard({ product }: ProductCardProps) {
       price: product.price,
       imageUrl: product.imageUrl,
     })
-  }, [addItem, product, accessToken, navigate])
+    addToast({ type: 'success', message: `${product.name} agregado al carrito` })
+    setCartOpen(true)
+  }, [addItem, product, accessToken, navigate, addToast, setCartOpen])
 
   return (
     <div

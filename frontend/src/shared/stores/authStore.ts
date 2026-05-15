@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { post, put, get as apiGet } from '../api/client'
 import { ENDPOINTS } from '../api/endpoints'
+import { useCartStore } from './cartStore'
 
 interface UserRead {
   id: string
@@ -123,6 +124,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             hasError: false,
           })
+          useCartStore.getState().clearCart()
         }
       },
 

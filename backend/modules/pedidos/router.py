@@ -51,8 +51,8 @@ async def get_order(
         raise NotFoundError(f"Order {order_id} not found")
     user_id = UUID(current_user["user_id"])
     if order.user_id != user_id:
-        from backend.core.exceptions import ForbiddenError
-        raise ForbiddenError("Access denied")
+        if UserRole(current_user["role"]) != UserRole.ADMIN:
+            raise ForbiddenError("Access denied")
     return order
 
 

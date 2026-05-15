@@ -54,20 +54,13 @@ The routing setup SHALL be prepared for code splitting with React.lazy.
 
 The frontend SHALL provide a `ProtectedRoute` component that guards authenticated-only routes.
 
-#### Scenario: ProtectedRoute redirects unauthenticated users
-- **WHEN** an unauthenticated user navigates to a protected route (e.g., `/profile`)
-- **THEN** the `ProtectedRoute` SHALL redirect to `/login?redirect=<original_path>`
-- **AND** the original path SHALL be preserved in the `redirect` query parameter
-
-#### Scenario: ProtectedRoute allows authenticated users
-- **WHEN** an authenticated user navigates to a protected route
-- **THEN** the `ProtectedRoute` SHALL render the requested page component
+#### Scenario: Admin route requires admin role
+- **WHEN** a user with role `cliente` navigates to `/admin/*`
+- **THEN** the `ProtectedRoute` SHALL redirect to `/` (home)
+- **AND** the user SHALL NOT see the admin panel
+- **WHEN** a user with role `admin` navigates to `/admin/*`
+- **THEN** the `ProtectedRoute` SHALL render the requested admin page
 - **AND** no redirect SHALL occur
-
-#### Scenario: ProtectedRoute handles loading state
-- **WHEN** the auth state is still loading (e.g., checking tokens)
-- **THEN** the `ProtectedRoute` SHALL display a loading spinner
-- **AND** SHALL NOT redirect until auth state is resolved
 
 ### Requirement: Login redirect preserves return URL
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { get } from '@shared/api/client'
 import { ENDPOINTS } from '@shared/api/endpoints'
 import { useCartStore } from '@shared/stores/cartStore'
@@ -93,6 +93,7 @@ function Icon({ name, size = 20 }: { name: string; size?: number }) {
 }
 
 export function ProductDetailModal({ productId, onClose }: ProductDetailModalProps) {
+  const navigate = useNavigate()
   const { isMobile } = useBreakpoint()
   const addItem = useCartStore((s) => s.addItem)
   const accessToken = useAuthStore((s) => s.accessToken)
@@ -112,6 +113,7 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
     if (!product) return
     if (!accessToken) {
       onClose()
+      navigate(`/login?redirect=/productos/${product.id}`)
       return
     }
     addItem({

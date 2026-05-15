@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, type CSSProperties } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useCartStore } from '@shared/stores/cartStore'
 import { useAuthStore } from '@shared/stores/authStore'
 import { useUiStore } from '@shared/stores/uiStore'
@@ -99,10 +100,13 @@ export default function Header() {
     toggleCart()
   }, [toggleCart])
 
+  const queryClient = useQueryClient()
+
   const handleLogout = useCallback(async () => {
     await logout()
+    queryClient.clear()
     navigate('/login', { replace: true })
-  }, [logout, navigate])
+  }, [logout, queryClient, navigate])
 
   const isActive = (path: string) => location.pathname === path
 

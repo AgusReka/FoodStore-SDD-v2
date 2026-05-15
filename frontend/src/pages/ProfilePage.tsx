@@ -110,6 +110,7 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     await logout()
+    queryClient.clear()
     navigate('/login', { replace: true })
   }
 

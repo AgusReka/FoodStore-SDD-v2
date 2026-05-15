@@ -5,7 +5,7 @@ import { validateRequired, validateEmail, validatePassword, validatePasswordsMat
 import { CONFIG } from '@shared/config/brand'
 
 interface RegisterFormProps {
-  onSuccess?: (email: string, password: string) => void
+  onSuccess?: (email: string) => void
 }
 
 const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
@@ -70,7 +70,7 @@ const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
         password,
         phone: phone || undefined,
       })
-      onSuccess?.(email, password)
+      onSuccess?.(email)
     } catch {
       // registerError is set by the mutation
     }

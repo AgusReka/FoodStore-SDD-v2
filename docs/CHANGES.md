@@ -71,16 +71,6 @@ Basado en los documentos del proyecto, el mapa tiene **20 changes** organizados 
 | `orders-state-machine` | Máquina de estados (6 estados: PENDIENTE→CONFIRMADO→EN_PREPARACION→EN_CAMINO→ENTREGADO, más CANCELADO), transiciones validadas por rol, decremento/incremento atómico de stock, historial append-only | US-039 a US-044 | `customer-cart-checkout` |
 | `admin-dashboard` | Dashboard con métricas (recharts), gestión de usuarios (listar, editar rol, desactivar), gestión de pedidos con FSM, top productos, distribución por estado, configuración del sistema | US-051 a US-060, US-064, US-065 | `orders-state-machine`, `rbac-guard` |
 
----
-
-## FASE 6 — Polish y Experiencia de Usuario
-
-| Change | Funcionalidad | Historias de Usuario | Dependencias |
-|--------|---------------|----------------------|--------------|
-| `addresses-ui` | CRUD completo de direcciones de entrega desde el perfil del usuario: crear, listar, editar, eliminar, establecer predeterminada | US-024 a US-028 | `rbac-guard` |
-| `ui-global` | Skeleton loaders, toasts, estados vacíos, modales de confirmación, manejo global de errores HTTP, feedback de pago post-MercadoPago, responsive design | US-066, US-067, US-072 | Todos los anteriores |
-
----
 
 ## Diagrama de Dependencias
 

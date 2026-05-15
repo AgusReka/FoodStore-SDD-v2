@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './Layout'
 import ProtectedRoute from '@shared/components/ProtectedRoute'
+import { ScrollToTop } from '@shared/components/ScrollToTop'
 import HomePage from '@pages/HomePage'
 import ProductDetailPage from '@pages/ProductDetailPage'
 import LoginPage from '@pages/LoginPage'
@@ -25,9 +26,11 @@ import { AdminOrderDetailPage } from '@features/admin/orders/AdminOrderDetailPag
 
 const App = () => {
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        {/* Public routes */}
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route element={<Layout />}>
+          {/* Public routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/productos/:id" element={<ProductDetailPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -48,7 +51,7 @@ const App = () => {
       </Route>
 
       {/* Admin routes — standalone layout, no customer header */}
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute requiredRole="admin" />}>
         <Route path="/admin" element={<AdminPage />}>
           <Route index element={<AdminDashboard />} />
           <Route path="categories" element={<CategoryListPage />} />
@@ -62,6 +65,7 @@ const App = () => {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   )
 }
 

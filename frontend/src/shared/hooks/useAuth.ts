@@ -67,7 +67,7 @@ export function useAuth() {
     isLoading: profileLoading,
     refetch: refreshProfile,
   } = useQuery<UserRead>({
-    queryKey: ['auth', 'me'],
+    queryKey: ['auth', 'me', accessToken],
     queryFn: async () => {
       const response = await get<UserRead>(ENDPOINTS.AUTH_ME)
       return response.data
