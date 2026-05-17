@@ -1,4 +1,5 @@
 """Order repository."""
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -13,18 +14,22 @@ class PedidoRepository(BaseRepository[Order]):
     def __init__(self, session):
         super().__init__(Order, session)
 
-    async def get_by_user(self, user_id: UUID, skip: int = 0, limit: int = 20, status: OrderStatus | None = None) -> list[Order]:
+    async def get_by_user(self, user_id: UUID, skip: int = 0, limit: int = 20, status: OrderStatus | None = None, desde: datetime | None = None) -> list[Order]:
         stmt = select(Order).where(Order.user_id == user_id)
         if status:
             stmt = stmt.where(Order.status == status)
+        if desde:
+            stmt = stmt.where(Order.created_at >= desde)
         stmt = stmt.offset(skip).limit(limit).order_by(Order.created_at.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def count_by_user(self, user_id: UUID, status: OrderStatus | None = None) -> int:
+    async def count_by_user(self, user_id: UUID, status: OrderStatus | None = None, desde: datetime | None = None) -> int:
         stmt = select(func.count()).select_from(Order).where(Order.user_id == user_id)
         if status:
             stmt = stmt.where(Order.status == status)
+        if desde:
+            stmt = stmt.where(Order.created_at >= desde)
         result = await self.session.execute(stmt)
         return result.scalar() or 0
 

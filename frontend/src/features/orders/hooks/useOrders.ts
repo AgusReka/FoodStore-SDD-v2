@@ -48,12 +48,13 @@ export interface OrderRead {
   updated_at: string | null
 }
 
-export function useOrdersList(page = 1, size = 20, estado?: string | null) {
+export function useOrdersList(page = 1, size = 20, estado?: string | null, periodo: string = 'all') {
   return useQuery({
-    queryKey: [...queryKeys.orders.list(), { page, size, estado }],
+    queryKey: [...queryKeys.orders.list(), { page, size, estado, periodo }],
     queryFn: async () => {
       const params: Record<string, unknown> = { page, size }
       if (estado) params.estado = estado
+      if (periodo && periodo !== 'all') params.periodo = periodo
 
       const response = await get<PaginatedResponse<OrderRead>>(
         ENDPOINTS.ORDERS_LIST,

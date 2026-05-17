@@ -238,15 +238,6 @@ export default function Header() {
             {isAuthenticated && (
               <>
                 <button
-                  data-path="/profile"
-                  style={linkStyle('/profile')}
-                  onClick={() => navigate('/profile')}
-                  onMouseEnter={(e) => handleNavHover(e, true)}
-                  onMouseLeave={(e) => handleNavHover(e, false)}
-                >
-                  Mi Perfil
-                </button>
-                <button
                   data-path="/orders"
                   style={linkStyle('/orders')}
                   onClick={() => navigate('/orders')}

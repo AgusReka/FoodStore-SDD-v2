@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useOrderDetail, useOrderHistory } from '@features/orders/hooks/useOrders'
+import { queryKeys } from '@shared/api/queryKeys'
 import { OrderTimeline } from '@features/orders/OrderTimeline'
 import { PaymentStatus } from '@features/orders/PaymentStatus'
 import { OrderHistory } from '@features/orders/OrderHistory'
@@ -107,6 +109,8 @@ const OrderDetailPage = () => {
   const { data: order, isLoading, isError, refetch } = useOrderDetail(id)
   const { data: history } = useOrderHistory(id)
 
+  const queryClient = useQueryClient()
+
   const [isPolling, setIsPolling] = useState(false)
   const pollAttempts = useRef(0)
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -145,6 +149,13 @@ const OrderDetailPage = () => {
       setIsPolling(false)
     }
   }, [order?.id, order?.payment?.status, order?.payment?.payment_method, refetch])
+
+  // Invalidate orders list cache so "Volver a mis pedidos" shows fresh data
+  useEffect(() => {
+    if (isNewOrder && order) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.list() })
+    }
+  }, [isNewOrder, order, queryClient])
 
   // Post-checkout success banner — remove the query param after showing
   if (isNewOrder && order && !isLoading) {

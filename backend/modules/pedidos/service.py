@@ -1,5 +1,6 @@
 """Order service."""
 import logging
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from backend.core.enums import OrderStatus
@@ -122,8 +123,13 @@ class OrderService(BaseService[Order]):
         return order
 
     async def list_by_user(
-        self, user_id: UUID, skip: int = 0, limit: int = 20, status: OrderStatus | None = None
+        self, user_id: UUID, skip: int = 0, limit: int = 20, status: OrderStatus | None = None, periodo: str | None = None
     ) -> tuple[list[Order], int]:
-        items = await self.repository.get_by_user(user_id, skip, limit, status)
-        total = await self.repository.count_by_user(user_id, status)
+        desde = None
+        if periodo and periodo != "all":
+            days_map = {"last_week": 7, "last_month": 30, "last_3_months": 90}
+            if periodo in days_map:
+                desde = datetime.utcnow() - timedelta(days=days_map[periodo])
+        items = await self.repository.get_by_user(user_id, skip, limit, status, desde)
+        total = await self.repository.count_by_user(user_id, status, desde)
         return items, total

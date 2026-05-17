@@ -4,6 +4,13 @@ import { useOrdersList } from '@features/orders/hooks/useOrders'
 import { OrderList } from '@entities/order/OrderList'
 import EmptyState from '@widgets/EmptyState'
 
+const PERIOD_FILTERS = [
+  { value: 'all', label: 'Todas' },
+  { value: 'last_week', label: 'Última semana' },
+  { value: 'last_month', label: 'Último mes' },
+  { value: 'last_3_months', label: 'Últimos 3 meses' },
+]
+
 const STATUS_FILTERS = [
   { value: null, label: 'Todos' },
   { value: 'pendiente', label: 'Pendientes' },
@@ -105,12 +112,18 @@ const OrdersPage = () => {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [periodFilter, setPeriodFilter] = useState<string>('all')
   const size = 10
 
-  const { data, isLoading, isError, refetch } = useOrdersList(page, size, statusFilter)
+  const { data, isLoading, isError, refetch } = useOrdersList(page, size, statusFilter, periodFilter)
 
   const handleFilterChange = (value: string | null) => {
     setStatusFilter(value)
+    setPage(1)
+  }
+
+  const handlePeriodFilterChange = (value: string) => {
+    setPeriodFilter(value)
     setPage(1)
   }
 
@@ -161,6 +174,58 @@ const OrdersPage = () => {
                   : '1px solid var(--line)',
                 fontWeight: 500,
                 fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 180ms',
+                boxShadow: isActive
+                  ? '0 6px 16px rgba(20,16,12,0.12)'
+                  : 'var(--shadow-xs)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'var(--surface)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'var(--bg-elevated)'
+                }
+              }}
+            >
+              {filter.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Period filter pills */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          overflowX: 'auto',
+          padding: '4px 0 24px',
+          marginBottom: 4,
+        }}
+      >
+        {PERIOD_FILTERS.map((filter) => {
+          const isActive = periodFilter === filter.value
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => handlePeriodFilterChange(filter.value)}
+              style={{
+                whiteSpace: 'nowrap',
+                height: 34,
+                padding: '0 14px',
+                borderRadius: 999,
+                background: isActive ? 'var(--ink-1)' : 'var(--bg-elevated)',
+                color: isActive ? 'white' : 'var(--ink-1)',
+                border: isActive
+                  ? '1px solid var(--ink-1)'
+                  : '1px solid var(--line)',
+                fontWeight: 500,
+                fontSize: 12.5,
                 cursor: 'pointer',
                 transition: 'all 180ms',
                 boxShadow: isActive

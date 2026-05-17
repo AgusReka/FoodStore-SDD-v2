@@ -28,13 +28,14 @@ async def list_my_orders(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     estado: OrderStatus | None = Query(None, description="Filter by order status"),
+    periodo: str | None = Query(None, description="Period filter: last_week, last_month, last_3_months, all"),
 ):
     user_id = UUID(current_user["user_id"])
     repo = PedidoRepository(db)
     product_repo = ProductRepository(db)
     service = OrderService(repo, product_repo)
     items, total = await service.list_by_user(
-        user_id, skip=(page - 1) * size, limit=size, status=estado
+        user_id, skip=(page - 1) * size, limit=size, status=estado, periodo=periodo
     )
     return PedidoList(items=list(items), total=total, page=page, size=size)
 

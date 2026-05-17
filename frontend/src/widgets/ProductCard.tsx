@@ -113,18 +113,6 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="absolute top-2.5 left-2.5 z-10">
           <StockBadgeMesa product={product} />
         </div>
-
-        <button
-          onClick={handleAddToCart}
-          disabled={!isAvailable}
-          className="absolute -bottom-5 right-3 z-10 flex items-center justify-center w-11 h-11 rounded-full bg-[var(--brand)] text-white transition-all duration-[180ms] var(--ease-out) hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
-          style={{ boxShadow: 'var(--shadow-brand)' }}
-          aria-label={isAvailable ? `Agregar ${product.name} al carrito` : `${product.name} no disponible`}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
       </div>
 
       <div className="px-3 pb-3 pt-4">
@@ -149,16 +137,21 @@ export function ProductCard({ product }: ProductCardProps) {
           </p>
         )}
 
-        {product.ingredientes && product.ingredientes.length > 0 && (
-          <p className="text-[11.5px] text-[var(--ink-4)] leading-snug mb-2">
-            {product.ingredientes.map((i) => i.name).join(', ')}
-          </p>
-        )}
-
         <div className="flex items-center justify-between pt-1">
           <span className="text-[17px] font-bold text-[var(--ink-1)] num">
             {CONFIG.currency}{product.price.toLocaleString(CONFIG.locale, { minimumFractionDigits: 2 })}
           </span>
+          <button
+            onClick={handleAddToCart}
+            disabled={!isAvailable}
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand)] text-white transition-all duration-[180ms] var(--ease-out) hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{ boxShadow: 'var(--shadow-brand)' }}
+            aria-label={isAvailable ? `Agregar ${product.name} al carrito` : `${product.name} no disponible`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
