@@ -12,9 +12,9 @@ class CategoriaService(BaseService[Category]):
         super().__init__(repository)
 
     async def delete_categoria(self, categoria_id: UUID) -> bool:
-        has_products = await self.repository.has_products(categoria_id)
-        if has_products:
-            raise ConflictError("Cannot delete category with associated products")
+        has_active = await self.repository.has_active_products(categoria_id)
+        if has_active:
+            raise ConflictError("Cannot delete category with active products")
         return await self.repository.delete(categoria_id)
 
     async def get_with_products(self, categoria_id: UUID) -> Category | None:

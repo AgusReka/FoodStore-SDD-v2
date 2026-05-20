@@ -81,7 +81,7 @@ export function CategoryTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {categories.map((category) => (
-              <tr key={category.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={category.id} className={`transition-colors ${category.deletedAt ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {category.name}
                 </td>
@@ -89,31 +89,41 @@ export function CategoryTable({
                   {category.description ?? '—'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      category.isActive
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {category.isActive ? 'Activo' : 'Inactivo'}
-                  </span>
+                  {category.deletedAt ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Eliminado
+                    </span>
+                  ) : (
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        category.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {category.isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <button
-                    onClick={() => onEdit(category)}
-                    className="text-blue-600 hover:text-blue-800 font-medium mr-4 transition-colors"
-                    aria-label={`Editar ${category.name}`}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => onDelete(category)}
-                    className="text-red-600 hover:text-red-800 font-medium transition-colors"
-                    aria-label={`Eliminar ${category.name}`}
-                  >
-                    Eliminar
-                  </button>
+                  {!category.deletedAt && (
+                    <>
+                      <button
+                        onClick={() => onEdit(category)}
+                        className="text-blue-600 hover:text-blue-800 font-medium mr-4 transition-colors"
+                        aria-label={`Editar ${category.name}`}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => onDelete(category)}
+                        className="text-red-600 hover:text-red-800 font-medium transition-colors"
+                        aria-label={`Eliminar ${category.name}`}
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

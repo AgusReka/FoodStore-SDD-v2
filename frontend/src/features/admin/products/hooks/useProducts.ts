@@ -9,10 +9,12 @@ import { normalizeProduct } from '@entities/product'
 
 export const productsKeys = {
   all: ['products'] as const,
-  list: (page: number, size: number, search?: string | null, categoriaId?: string | null) =>
-    ['products', 'list', { page, size, search, categoriaId }] as const,
+  list: (page: number, size: number, search?: string | null, categoriaId?: string | null, includeDeleted?: boolean) =>
+    ['products', 'list', { page, size, search, categoriaId, includeDeleted }] as const,
   detail: (id: string) => ['products', 'detail', id] as const,
 }
+
+const STOCK_ALERTS_KEY = ['stock-alerts'] as const
 
 // ── List Hook ────────────────────────────────────────────────────────
 
@@ -20,14 +22,16 @@ export function useProductsList(
   page = 1,
   size = 20,
   search?: string | null,
-  categoriaId?: string | null
+  categoriaId?: string | null,
+  includeDeleted?: boolean
 ) {
   return useQuery({
-    queryKey: productsKeys.list(page, size, search, categoriaId),
+    queryKey: productsKeys.list(page, size, search, categoriaId, includeDeleted),
     queryFn: async () => {
       const params: Record<string, unknown> = { page, size }
       if (search) params.search = search
       if (categoriaId) params.categoria_id = categoriaId
+      if (includeDeleted) params.include_deleted = true
 
       const response = await get<PaginatedResponse<ProductRaw>>(
         ENDPOINTS.PRODUCTS_LIST,
@@ -69,6 +73,8 @@ export function useCreateProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productsKeys.all })
+      queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
     },
   })
 }
@@ -86,6 +92,8 @@ export function useUpdateProduct() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: productsKeys.all })
       queryClient.invalidateQueries({ queryKey: productsKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
     },
   })
 }
@@ -101,6 +109,8 @@ export function useDeleteProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productsKeys.all })
+      queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
     },
   })
 }

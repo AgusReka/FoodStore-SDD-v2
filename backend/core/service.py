@@ -29,5 +29,5 @@ class BaseService(Generic[ModelT]):
     async def delete(self, id: UUID) -> bool:
         return await self.repository.delete(id)
 
-    async def paginate(self, page: int = 1, size: int = 20) -> tuple[Sequence[ModelT], int]:
-        return await self.repository.paginate(page=page, size=size)
+    async def paginate(self, page: int = 1, size: int = 20, include_deleted: bool = False) -> tuple[Sequence[ModelT], int]:
+        return await self.repository.paginate(page=page, size=size, include_deleted=include_deleted)

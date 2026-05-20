@@ -18,21 +18,27 @@ class ProductRepository(BaseRepository[Product]):
         """Return eager-loading option that fetches ingredients + nested ingredient data."""
         return selectinload(Product.ingredients).selectinload(ProductIngredient.ingredient)
 
-    async def search_by_name(self, query: str, skip: int = 0, limit: int = 20) -> list[Product]:
+    async def search_by_name(self, query: str, skip: int = 0, limit: int = 20, include_deleted: bool = False) -> list[Product]:
         search = f"%{query}%"
+        conditions = [Product.name.ilike(search)]
+        if not include_deleted:
+            conditions.append(Product.deleted_at.is_(None))
         stmt = (
             select(Product)
-            .where(Product.name.ilike(search))
+            .where(*conditions)
             .offset(skip).limit(limit)
             .options(self._load_ingredients())
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def filter_by_categoria(self, category_id: UUID, skip: int = 0, limit: int = 20) -> list[Product]:
+    async def filter_by_categoria(self, category_id: UUID, skip: int = 0, limit: int = 20, include_deleted: bool = False) -> list[Product]:
+        conditions = [Product.category_id == category_id]
+        if not include_deleted:
+            conditions.append(Product.deleted_at.is_(None))
         stmt = (
             select(Product)
-            .where(Product.category_id == category_id)
+            .where(*conditions)
             .offset(skip).limit(limit)
             .options(self._load_ingredients())
         )
@@ -179,15 +185,30 @@ class ProductRepository(BaseRepository[Product]):
         order_by: str | None = None,
         descending: bool = False,
         filters: list | None = None,
+        include_deleted: bool = False,
     ) -> tuple[list[Product], int]:
         """Paginated read with ingredients eagerly loaded."""
-        total = await self.count(filters=filters)
+        count_conditions = []
+        if not include_deleted:
+            count_conditions.append(Product.deleted_at.is_(None))
+        count_stmt = select(func.count()).select_from(Product)
+        if count_conditions:
+            count_stmt = count_stmt.where(*count_conditions)
+        if filters:
+            count_stmt = count_stmt.where(*filters)
+        total_result = await self.session.execute(count_stmt)
+        total = total_result.scalar_one()
 
+        stmt_conditions = []
+        if not include_deleted:
+            stmt_conditions.append(Product.deleted_at.is_(None))
         stmt = (
             select(Product)
             .offset((page - 1) * size).limit(size)
             .options(self._load_ingredients())
         )
+        if stmt_conditions:
+            stmt = stmt.where(*stmt_conditions)
         if order_by:
             column = getattr(self.model, order_by, None)
             if column is not None:

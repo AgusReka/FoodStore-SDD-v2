@@ -1,8 +1,9 @@
 """Generic async CRUD repository."""
+from datetime import datetime, timezone
 from typing import Any, Generic, Sequence, TypeVar
 from uuid import UUID
 
-from sqlalchemy import delete as sa_delete, func, select
+from sqlalchemy import Select, delete as sa_delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.base import Base
@@ -32,6 +33,7 @@ class BaseRepository(Generic[ModelT]):
     ) -> Sequence[ModelT]:
         """Get all with pagination."""
         stmt = select(self.model).offset(skip).limit(limit)
+        stmt = self._active_filter(stmt)
 
         if order_by:
             column = getattr(self.model, order_by, None)
@@ -64,14 +66,27 @@ class BaseRepository(Generic[ModelT]):
         return instance
 
     async def delete(self, id: UUID) -> bool:
-        """Delete by primary key. Returns True if deleted, False if not found."""
+        """Soft delete by setting deleted_at, or hard delete if model lacks the field."""
         instance = await self.get(id)
         if not instance:
             return False
 
-        await self.session.delete(instance)
-        await self.session.commit()
+        if hasattr(instance, "deleted_at"):
+            if instance.deleted_at is not None:
+                # Already soft-deleted — prevent double delete
+                return False
+            instance.deleted_at = datetime.now(timezone.utc)
+            await self.session.commit()
+        else:
+            await self.session.delete(instance)
+            await self.session.commit()
         return True
+
+    def _active_filter(self, stmt: Select) -> Select:
+        """Add WHERE deleted_at IS NULL if the model supports soft delete."""
+        if hasattr(self.model, "deleted_at"):
+            return stmt.where(self.model.deleted_at.is_(None))
+        return stmt
 
     async def count(self, filters: list | None = None) -> int:
         """Count records."""
@@ -90,11 +105,20 @@ class BaseRepository(Generic[ModelT]):
         order_by: str | None = None,
         descending: bool = False,
         filters: list | None = None,
+        include_deleted: bool = False,
     ) -> tuple[Sequence[ModelT], int]:
         """Paginated read with total count. Returns (items, total)."""
-        total = await self.count(filters=filters)
+        count_stmt = select(func.count()).select_from(self.model)
+        if not include_deleted:
+            count_stmt = self._active_filter(count_stmt)
+        if filters:
+            count_stmt = count_stmt.where(*filters)
+        total_result = await self.session.execute(count_stmt)
+        total = total_result.scalar_one()
 
         stmt = select(self.model).offset((page - 1) * size).limit(size)
+        if not include_deleted:
+            stmt = self._active_filter(stmt)
 
         if order_by:
             column = getattr(self.model, order_by, None)

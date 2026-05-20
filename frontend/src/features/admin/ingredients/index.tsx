@@ -41,7 +41,8 @@ const emptyFormData: CreateIngredientDto = {
 
 export function IngredientListPage() {
   const [page, setPage] = useState(1)
-  const { data, isLoading } = useIngredientsList(page, PAGE_SIZE)
+  const [showDeleted, setShowDeleted] = useState(false)
+  const { data, isLoading } = useIngredientsList(page, PAGE_SIZE, showDeleted)
 
   // Modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
@@ -147,6 +148,7 @@ export function IngredientListPage() {
           return
         }
       }
+      setConflictError('Ocurrió un error inesperado. Intente nuevamente.')
     }
   }, [ingredientToDelete, deleteMutation, closeDeleteDialog])
 
@@ -166,9 +168,23 @@ export function IngredientListPage() {
             Administra los ingredientes para los productos
           </p>
         </div>
-        <Button onClick={openCreateModal}>
-          + Nuevo Ingrediente
-        </Button>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showDeleted}
+              onChange={(e) => {
+                setShowDeleted(e.target.checked)
+                setPage(1)
+              }}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            Mostrar eliminados
+          </label>
+          <Button onClick={openCreateModal}>
+            + Nuevo Ingrediente
+          </Button>
+        </div>
       </div>
 
       {/* Table */}

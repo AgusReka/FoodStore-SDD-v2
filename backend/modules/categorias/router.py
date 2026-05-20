@@ -18,10 +18,11 @@ async def list_categorias(
     db: Annotated[AsyncSession, Depends(get_db)],
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
+    include_deleted: bool = Query(False),
 ):
     repo = CategoriaRepository(db)
     service = CategoriaService(repo)
-    items, total = await service.paginate(page=page, size=size)
+    items, total = await service.paginate(page=page, size=size, include_deleted=include_deleted)
     return CategoriaList(items=list(items), total=total, page=page, size=size)
 
 

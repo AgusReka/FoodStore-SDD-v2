@@ -26,6 +26,7 @@ class CategoriaRead(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime | None = None
+    deleted_at: datetime | None = None
 
 
 class CategoriaList(BaseModel):

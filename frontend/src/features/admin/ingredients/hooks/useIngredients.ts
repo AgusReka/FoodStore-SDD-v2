@@ -10,7 +10,7 @@ import { productsKeys } from '@features/admin/products/hooks/useProducts'
 
 export const ingredientsKeys = {
   all: ['ingredients'] as const,
-  list: (page: number, size: number) => ['ingredients', 'list', { page, size }] as const,
+  list: (page: number, size: number, includeDeleted?: boolean) => ['ingredients', 'list', { page, size, includeDeleted }] as const,
   detail: (id: string) => ['ingredients', 'detail', id] as const,
 }
 
@@ -24,13 +24,15 @@ const STOCK_ALERTS_KEY = ['stock-alerts'] as const
 
 // ── List Hook ────────────────────────────────────────────────────────
 
-export function useIngredientsList(page = 1, size = 20) {
+export function useIngredientsList(page = 1, size = 20, includeDeleted?: boolean) {
   return useQuery({
-    queryKey: ingredientsKeys.list(page, size),
+    queryKey: ingredientsKeys.list(page, size, includeDeleted),
     queryFn: async () => {
+      const params: Record<string, unknown> = { page, size }
+      if (includeDeleted) params.include_deleted = true
       const response = await get<PaginatedResponse<IngredientRaw>>(
         ENDPOINTS.INGREDIENTS_LIST,
-        { page, size }
+        params
       )
       return {
         items: response.data.items.map(normalizeIngredient),
@@ -69,6 +71,8 @@ export function useCreateIngredient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ingredientsKeys.all })
       queryClient.invalidateQueries({ queryKey: INGREDIENTS_ALL_KEY })
+      queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
     },
   })
 }
@@ -89,6 +93,7 @@ export function useUpdateIngredient() {
       queryClient.invalidateQueries({ queryKey: INGREDIENTS_ALL_KEY })
       // Trigger re-query for dependent features:
       queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
       queryClient.invalidateQueries({ queryKey: productsKeys.all })
     },
   })
@@ -108,6 +113,7 @@ export function useDeleteIngredient() {
       queryClient.invalidateQueries({ queryKey: INGREDIENTS_ALL_KEY })
       // Trigger re-query for dependent features:
       queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
       queryClient.invalidateQueries({ queryKey: productsKeys.all })
     },
   })

@@ -24,6 +24,7 @@ interface FormErrors {
   description?: string
   image_url?: string
   category_id?: string
+  stock?: string
 }
 
 function validateName(name: string): string | undefined {
@@ -47,6 +48,7 @@ const emptyFormData: CreateProductDto = {
   currency: 'ARS',
   image_url: '',
   is_available: true,
+  stock_cantidad: null,
   category_id: '',
   ingredientes: [],
 }
@@ -56,8 +58,9 @@ export function ProductListPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterCategoryId, setFilterCategoryId] = useState('')
+  const [showDeleted, setShowDeleted] = useState(false)
 
-  const { data, isLoading } = useProductsList(page, PAGE_SIZE, debouncedSearch || null, filterCategoryId || null)
+  const { data, isLoading } = useProductsList(page, PAGE_SIZE, debouncedSearch || null, filterCategoryId || null, showDeleted)
 
   // ── Fetch all categories (for table lookup + form dropdown) ─────────
   const { data: categoriesData } = useQuery({
@@ -113,7 +116,6 @@ export function ProductListPage() {
   // ── Delete state ────────────────────────────────────────────────────
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
-  const [conflictError, setConflictError] = useState<string | null>(null)
 
   // ── Mutations ───────────────────────────────────────────────────────
   const createMutation = useCreateProduct()
@@ -138,6 +140,7 @@ export function ProductListPage() {
       currency: product.currency,
       image_url: product.imageUrl,
       is_available: product.isAvailable,
+      stock_cantidad: product.stockCantidad,
       category_id: product.categoryId,
       ingredientes: product.ingredientes?.map((i) => ({
         ingredient_id: i.ingredientId,
@@ -160,10 +163,21 @@ export function ProductListPage() {
     const nameError = validateName(nameValue)
     const priceValue = 'price' in formData ? formData.price : undefined
     const priceError = validatePrice(priceValue)
+    const categoryValue = 'category_id' in formData ? formData.category_id ?? '' : ''
+    const categoryError = !categoryValue ? 'Selecciona una categoría' : undefined
+    const ingredientes = 'ingredientes' in formData ? formData.ingredientes ?? [] : []
+    const stockValue = 'stock_cantidad' in formData ? formData.stock_cantidad : undefined
+    // Must have either stock_cantidad (simple) or ingredientes (calculado)
+    const stockError =
+      ingredientes.length === 0 && (stockValue === null || stockValue === undefined)
+        ? 'Debe tener stock simple o ingredientes'
+        : undefined
 
     const errors: FormErrors = {}
     if (nameError) errors.name = nameError
     if (priceError) errors.price = priceError
+    if (categoryError) errors.category_id = categoryError
+    if (stockError) errors.stock = stockError
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors)
@@ -190,14 +204,12 @@ export function ProductListPage() {
 
   const openDeleteDialog = useCallback((product: Product) => {
     setProductToDelete(product)
-    setConflictError(null)
     setIsDeleteOpen(true)
   }, [])
 
   const closeDeleteDialog = useCallback(() => {
     setIsDeleteOpen(false)
     setProductToDelete(null)
-    setConflictError(null)
   }, [])
 
   const handleDelete = useCallback(async () => {
@@ -207,13 +219,7 @@ export function ProductListPage() {
       await deleteMutation.mutateAsync(productToDelete.id)
       closeDeleteDialog()
     } catch (err) {
-      if (isAxiosError(err)) {
-        if (err.response?.status === 409) {
-          const message = (err.response.data as { detail?: string })?.detail ?? 'El producto tiene pedidos asociados y no puede ser eliminado.'
-          setConflictError(message)
-          return
-        }
-      }
+      // Soft delete should always succeed; log unexpected errors
     }
   }, [productToDelete, deleteMutation, closeDeleteDialog])
 
@@ -268,6 +274,18 @@ export function ProductListPage() {
             ))}
           </select>
         </div>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showDeleted}
+            onChange={(e) => {
+              setShowDeleted(e.target.checked)
+              setPage(1)
+            }}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          Mostrar eliminados
+        </label>
       </div>
 
       {/* Table */}
@@ -317,8 +335,6 @@ export function ProductListPage() {
         onConfirm={handleDelete}
         product={productToDelete}
         isPending={deleteMutation.isPending}
-        conflictError={conflictError}
-        onClearError={() => setConflictError(null)}
       />
     </div>
   )

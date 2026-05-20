@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Input } from '@shared/components/Input'
 import type {
   CreateProductDto,
@@ -16,6 +17,7 @@ interface FormErrors {
   image_url?: string
   category_id?: string
   stock_cantidad?: string
+  stock?: string
 }
 
 interface ProductFormProps {
@@ -41,12 +43,30 @@ export function ProductForm({
     onChange({ ...formData, [field]: value ?? null })
   }
 
-  // ── Ingredient management ───────────────────────────────────────────
+  // ── Stock type toggle ────────────────────────────────────────────────
 
   const currentIngredients: ProductIngredientCreateDto[] =
     ('ingredientes' in formData ? formData.ingredientes : null) ?? []
 
-  const hasIngredients = currentIngredients.length > 0
+  const stockType: 'simple' | 'calculado' =
+    currentIngredients.length > 0 ? 'calculado' : 'simple'
+
+  // Local state so the UI can switch modes independently of the data
+  // (e.g. user clicks "calculado" before adding any ingredients)
+  const [localStockType, setLocalStockType] = useState<'simple' | 'calculado'>(stockType)
+  const activeStockType = localStockType
+
+  const setStockType = (type: 'simple' | 'calculado') => {
+    setLocalStockType(type)
+    if (type === 'simple') {
+      // Clear ingredients, show stock input
+      const { ingredientes: _, ...rest } = formData as CreateProductDto
+      onChange({ ...rest, ingredientes: [] })
+    } else {
+      // Clear stock, show ingredients
+      onChange({ ...formData, stock_cantidad: null })
+    }
+  }
 
   const addIngredient = (ingredientId: string) => {
     if (currentIngredients.some((i) => i.ingredient_id === ingredientId)) return
@@ -75,16 +95,6 @@ export function ProductForm({
   const availableIngredients = ingredients.filter(
     (ing) => !currentIngredients.some((ci) => ci.ingredient_id === ing.id)
   )
-
-  // Calculate stock display for compound products
-  const stockDisplay = (() => {
-    if (!hasIngredients) return null
-    const selectedProductStock = selectedProduct?.stockDisponible
-    if (selectedProductStock != null) {
-      return `${selectedProductStock} uds. (calculado)`
-    }
-    return '— uds. (calculado a confirmar)'
-  })()
 
   return (
     <div className="space-y-6">
@@ -137,7 +147,7 @@ export function ProductForm({
               min="0"
               placeholder="1500.00"
               value={'price' in formData ? (formData as CreateProductDto).price ?? '' : ''}
-              onChange={(e) => handleChange('price', parseFloat(e.target.value) || '')}
+              onChange={(e) => handleChange('price', e.target.value === '' ? '' : parseFloat(e.target.value))}
               error={errors.price}
               required
             />
@@ -193,20 +203,40 @@ export function ProductForm({
         </div>
       </div>
 
-      {/* ── Stock (condicional) ───────────────────────────────────────── */}
+      {/* ── Stock Type ──────────────────────────────────────────────── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-800 mb-3">Stock</h3>
-        {hasIngredients ? (
-          <div className="bg-blue-50 rounded-lg px-4 py-3">
-            <p className="text-sm text-blue-800">
-              <span className="font-medium">Stock calculado por ingredientes:</span>{' '}
-              {stockDisplay}
-            </p>
-            <p className="text-xs text-blue-600 mt-1">
-              La disponibilidad se calcula automáticamente desde el stock de ingredientes.
-            </p>
-          </div>
-        ) : (
+        <h3 className="text-sm font-semibold text-gray-800 mb-3">Tipo de stock</h3>
+        <div className="flex gap-4 mb-4">
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="radio"
+              name="stock_type"
+              value="simple"
+              checked={activeStockType === 'simple'}
+              onChange={() => setStockType('simple')}
+              className="text-blue-600 focus:ring-blue-500"
+            />
+            Stock simple (cantidad directa)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="radio"
+              name="stock_type"
+              value="calculado"
+              checked={activeStockType === 'calculado'}
+              onChange={() => setStockType('calculado')}
+              className="text-blue-600 focus:ring-blue-500"
+            />
+            Stock calculado (por ingredientes)
+          </label>
+        </div>
+
+        {errors.stock && (
+          <p className="text-sm text-red-600 mb-3" role="alert">{errors.stock}</p>
+        )}
+
+        {/* ── Simple Stock ──────────────────────────────────────────── */}
+        {activeStockType === 'simple' && (
           <Input
             label="Stock disponible"
             name="stock_cantidad"
@@ -219,69 +249,86 @@ export function ProductForm({
             error={errors.stock_cantidad}
           />
         )}
-      </div>
 
-      {/* ── Ingredients ──────────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-800 mb-3">Ingredientes</h3>
-
-        {/* Selected ingredients list */}
-        <div className="space-y-2 mb-3">
-          {currentIngredients.length === 0 && (
-            <p className="text-sm text-gray-400 italic">Sin ingredientes seleccionados</p>
-          )}
-          {currentIngredients.map((item) => {
-            const ingredient = ingredients.find((i) => i.id === item.ingredient_id)
-            return (
-              <div key={item.ingredient_id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
-                <span className="flex-1 text-sm font-medium text-gray-700">
-                  {ingredient?.name ?? item.ingredient_id}
-                </span>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-gray-500">Cant:</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      updateIngredientQuantity(item.ingredient_id, parseFloat(e.target.value) || 0)
-                    }
-                    className="w-20 rounded border border-gray-300 px-2 py-1 text-sm text-center focus:border-blue-400 focus:ring-1 focus:ring-blue-500"
-                    aria-label={`Cantidad de ${ingredient?.name ?? 'ingrediente'}`}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeIngredient(item.ingredient_id)}
-                  className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
-                  aria-label={`Eliminar ${ingredient?.name ?? 'ingrediente'}`}
-                >
-                  Quitar
-                </button>
+        {/* ── Calculated Stock ──────────────────────────────────────── */}
+        {activeStockType === 'calculado' && (
+          <>
+            {currentIngredients.length > 0 && (
+              <div className="bg-blue-50 rounded-lg px-4 py-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">Stock calculado por ingredientes:</span>{' '}
+                  {(() => {
+                    const s = selectedProduct?.stockDisponible
+                    return s != null ? `${s} uds. (calculado)` : '— uds. (a confirmar)'
+                  })()}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  La disponibilidad se calcula automáticamente desde el stock de ingredientes.
+                </p>
               </div>
-            )
-          })}
-        </div>
+            )}
 
-        {/* Add ingredient dropdown */}
-        {availableIngredients.length > 0 && (
-          <select
-            value=""
-            onChange={(e) => {
-              if (e.target.value) addIngredient(e.target.value)
-              e.target.value = '' // Reset after selection
-            }}
-            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-500"
-            aria-label="Agregar ingrediente"
-          >
-            <option value="">+ Agregar ingrediente...</option>
-            {availableIngredients.map((ing) => (
-              <option key={ing.id} value={ing.id}>
-                {ing.name} ({ing.unit})
-              </option>
-            ))}
-          </select>
+            {/* ── Ingredients ────────────────────────────────────────── */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Ingredientes</h4>
+              <div className="space-y-2 mb-3">
+                {currentIngredients.length === 0 && (
+                  <p className="text-sm text-gray-400 italic">Sin ingredientes seleccionados</p>
+                )}
+                {currentIngredients.map((item) => {
+                  const ingredient = ingredients.find((i) => i.id === item.ingredient_id)
+                  return (
+                    <div key={item.ingredient_id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
+                      <span className="flex-1 text-sm font-medium text-gray-700">
+                        {ingredient?.name ?? item.ingredient_id}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-gray-500">Cant:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            updateIngredientQuantity(item.ingredient_id, parseFloat(e.target.value) || 0)
+                          }
+                          className="w-20 rounded border border-gray-300 px-2 py-1 text-sm text-center focus:border-blue-400 focus:ring-1 focus:ring-blue-500"
+                          aria-label={`Cantidad de ${ingredient?.name ?? 'ingrediente'}`}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeIngredient(item.ingredient_id)}
+                        className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
+                        aria-label={`Eliminar ${ingredient?.name ?? 'ingrediente'}`}
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {availableIngredients.length > 0 && (
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) addIngredient(e.target.value)
+                    e.target.value = ''
+                  }}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-500"
+                  aria-label="Agregar ingrediente"
+                >
+                  <option value="">+ Agregar ingrediente...</option>
+                  {availableIngredients.map((ing) => (
+                    <option key={ing.id} value={ing.id}>
+                      {ing.name} ({ing.unit})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </>
         )}
       </div>
 

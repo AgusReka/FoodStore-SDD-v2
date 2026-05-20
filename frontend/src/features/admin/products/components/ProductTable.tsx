@@ -130,7 +130,7 @@ export function ProductTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={product.id} className={`transition-colors ${product.deletedAt ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   <div className="flex items-center gap-3">
                     {product.imageUrl && (
@@ -154,31 +154,41 @@ export function ProductTable({
                   <StockDisplay product={product} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      product.isAvailable
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {product.isAvailable ? 'Disponible' : 'No disponible'}
-                  </span>
+                  {product.deletedAt ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Eliminado
+                    </span>
+                  ) : (
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        product.isAvailable
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {product.isAvailable ? 'Disponible' : 'No disponible'}
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <button
-                    onClick={() => onEdit(product)}
-                    className="text-blue-600 hover:text-blue-800 font-medium mr-4 transition-colors"
-                    aria-label={`Editar ${product.name}`}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => onDelete(product)}
-                    className="text-red-600 hover:text-red-800 font-medium transition-colors"
-                    aria-label={`Eliminar ${product.name}`}
-                  >
-                    Eliminar
-                  </button>
+                  {!product.deletedAt && (
+                    <>
+                      <button
+                        onClick={() => onEdit(product)}
+                        className="text-blue-600 hover:text-blue-800 font-medium mr-4 transition-colors"
+                        aria-label={`Editar ${product.name}`}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => onDelete(product)}
+                        className="text-red-600 hover:text-red-800 font-medium transition-colors"
+                        aria-label={`Eliminar ${product.name}`}
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

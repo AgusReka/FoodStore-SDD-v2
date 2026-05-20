@@ -52,6 +52,7 @@ def _build_product_read(product) -> ProductRead:
         ingredientes=ingredientes,
         created_at=product.created_at,
         updated_at=product.updated_at,
+        deleted_at=product.deleted_at,
     )
 
 
@@ -152,18 +153,19 @@ async def list_products(
     size: int = Query(20, ge=1, le=100),
     search: str | None = Query(None),
     categoria_id: UUID | None = Query(None),
+    include_deleted: bool = Query(False),
 ):
     product_repo = ProductRepository(db)
     categoria_repo = CategoriaRepository(db)
     service = ProductService(product_repo, categoria_repo)
     if search:
-        items = await service.search_products(search, skip=(page - 1) * size, limit=size)
+        items = await service.search_products(search, skip=(page - 1) * size, limit=size, include_deleted=include_deleted)
         total = len(items)
     elif categoria_id:
-        items = await service.filter_by_category(categoria_id, skip=(page - 1) * size, limit=size)
+        items = await service.filter_by_category(categoria_id, skip=(page - 1) * size, limit=size, include_deleted=include_deleted)
         total = len(items)
     else:
-        items, total = await service.paginate_products(page=page, size=size)
+        items, total = await service.paginate_products(page=page, size=size, include_deleted=include_deleted)
     return ProductList(items=[_build_product_read(p) for p in items], total=total, page=page, size=size)
 
 

@@ -104,7 +104,7 @@ export function IngredientTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {ingredients.map((ingredient) => (
-              <tr key={ingredient.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={ingredient.id} className={`transition-colors ${ingredient.deletedAt ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {ingredient.name}
                 </td>
@@ -112,7 +112,13 @@ export function IngredientTable({
                   {ingredient.unit}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <StockBadge actual={ingredient.stockActual} minimo={ingredient.stockMinimo} />
+                  {ingredient.deletedAt ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Eliminado
+                    </span>
+                  ) : (
+                    <StockBadge actual={ingredient.stockActual} minimo={ingredient.stockMinimo} />
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {ingredient.stockMinimo}
@@ -121,20 +127,24 @@ export function IngredientTable({
                   {ingredient.description ?? '—'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <button
-                    onClick={() => onEdit(ingredient)}
-                    className="text-blue-600 hover:text-blue-800 font-medium mr-4 transition-colors"
-                    aria-label={`Editar ${ingredient.name}`}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => onDelete(ingredient)}
-                    className="text-red-600 hover:text-red-800 font-medium transition-colors"
-                    aria-label={`Eliminar ${ingredient.name}`}
-                  >
-                    Eliminar
-                  </button>
+                  {!ingredient.deletedAt && (
+                    <>
+                      <button
+                        onClick={() => onEdit(ingredient)}
+                        className="text-blue-600 hover:text-blue-800 font-medium mr-4 transition-colors"
+                        aria-label={`Editar ${ingredient.name}`}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => onDelete(ingredient)}
+                        className="text-red-600 hover:text-red-800 font-medium transition-colors"
+                        aria-label={`Eliminar ${ingredient.name}`}
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

@@ -6,11 +6,13 @@ import type { CategoryRaw, Category, CreateCategoryDto, UpdateCategoryDto } from
 import { normalizeCategory } from '@entities/category'
 import { productsKeys } from '@features/admin/products/hooks/useProducts'
 
+const STOCK_ALERTS_KEY = ['stock-alerts'] as const
+
 // ── Query Keys ───────────────────────────────────────────────────────
 
 export const categoriesKeys = {
   all: ['categories'] as const,
-  list: (page: number, size: number) => ['categories', 'list', { page, size }] as const,
+  list: (page: number, size: number, includeDeleted?: boolean) => ['categories', 'list', { page, size, includeDeleted }] as const,
   detail: (id: string) => ['categories', 'detail', id] as const,
 }
 
@@ -19,13 +21,15 @@ const CATEGORIES_ALL_KEY = ['categories', 'all'] as const
 
 // ── List Hook ────────────────────────────────────────────────────────
 
-export function useCategoriesList(page = 1, size = 20) {
+export function useCategoriesList(page = 1, size = 20, includeDeleted?: boolean) {
   return useQuery({
-    queryKey: categoriesKeys.list(page, size),
+    queryKey: categoriesKeys.list(page, size, includeDeleted),
     queryFn: async () => {
+      const params: Record<string, unknown> = { page, size }
+      if (includeDeleted) params.include_deleted = true
       const response = await get<PaginatedResponse<CategoryRaw>>(
         ENDPOINTS.CATEGORIES_LIST,
-        { page, size }
+        params
       )
       return {
         items: response.data.items.map(normalizeCategory),
@@ -64,6 +68,8 @@ export function useCreateCategory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoriesKeys.all })
       queryClient.invalidateQueries({ queryKey: CATEGORIES_ALL_KEY })
+      queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
     },
   })
 }
@@ -83,6 +89,8 @@ export function useUpdateCategory() {
       queryClient.invalidateQueries({ queryKey: categoriesKeys.detail(variables.id) })
       queryClient.invalidateQueries({ queryKey: CATEGORIES_ALL_KEY })
       queryClient.invalidateQueries({ queryKey: productsKeys.all })
+      queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
     },
   })
 }
@@ -100,6 +108,8 @@ export function useDeleteCategory() {
       queryClient.invalidateQueries({ queryKey: categoriesKeys.all })
       queryClient.invalidateQueries({ queryKey: CATEGORIES_ALL_KEY })
       queryClient.invalidateQueries({ queryKey: productsKeys.all })
+      queryClient.invalidateQueries({ queryKey: STOCK_ALERTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts-count'] })
     },
   })
 }

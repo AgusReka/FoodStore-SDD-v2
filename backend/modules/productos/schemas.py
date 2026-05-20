@@ -56,6 +56,7 @@ class ProductRead(BaseModel):
     ingredientes: list[ProductIngredientRead] | None = None
     created_at: datetime
     updated_at: datetime | None = None
+    deleted_at: datetime | None = None
 
 
 class ProductList(BaseModel):

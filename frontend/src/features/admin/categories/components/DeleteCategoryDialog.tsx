@@ -73,7 +73,7 @@ export function DeleteCategoryDialog({
           </p>
           <p className="text-base font-semibold text-gray-900">{category.name}</p>
           <p className="text-sm text-gray-500 mt-3">
-            Esta acción no se puede deshacer. Si la categoría tiene productos asociados, no se podrá eliminar.
+            La categoria sera marcada como eliminada y no podra ser asignada a nuevos productos. Si tiene productos activos asignados, no se podra eliminar.
           </p>
         </div>
       )}

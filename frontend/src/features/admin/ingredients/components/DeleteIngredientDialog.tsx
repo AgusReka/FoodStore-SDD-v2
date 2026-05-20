@@ -73,7 +73,7 @@ export function DeleteIngredientDialog({
           </p>
           <p className="text-base font-semibold text-gray-900">{ingredient.name}</p>
           <p className="text-sm text-gray-500 mt-3">
-            Esta acción no se puede deshacer. Si el ingrediente está asociado a productos, no se podrá eliminar.
+            El ingrediente sera marcado como eliminado. Si esta asociado a productos activos, no se podra eliminar.
           </p>
         </div>
       )}

@@ -1,4 +1,5 @@
 """Database seed script for development data."""
+from datetime import datetime, timezone, timedelta
 import asyncio
 import sys
 from pathlib import Path
@@ -447,6 +448,174 @@ async def seed_orders(session, user, address, products):
     )
 
 
+async def seed_old_orders(session, user, address, products):
+    """Create old-dated orders for testing date filters (last 90 days)."""
+    now = datetime.now(timezone.utc)
+
+    # Check if old orders already exist (orders older than 7 days)
+    week_ago = now - timedelta(days=7)
+    existing = await session.execute(
+        select(Order).where(
+            Order.user_id == user.id,
+            Order.created_at <= week_ago
+        )
+    )
+    existing_orders = existing.scalars().all()
+    if existing_orders:
+        print(f"  [  ] {len(existing_orders)} old orders already exist, skipping")
+        return
+
+    product_list = list(products.values())
+
+    old_orders = [
+        {
+            "days_ago": 90,
+            "status": OrderStatus.ENTREGADO,
+            "payment_status": PaymentStatus.APROBADO,
+            "product_indices": [0, 2],  # Coca Cola, Hamburguesa
+            "history": [
+                {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+                {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+                {"from": OrderStatus.PREPARANDO, "to": OrderStatus.ENVIADO, "reason": "Pedido en camino"},
+                {"from": OrderStatus.ENVIADO, "to": OrderStatus.ENTREGADO, "reason": "Entregado al cliente"},
+            ],
+        },
+        {
+            "days_ago": 75,
+            "status": OrderStatus.ENTREGADO,
+            "payment_status": PaymentStatus.APROBADO,
+            "product_indices": [6, 7],  # Pizza Margarita, Pizza Napolitana
+            "history": [
+                {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+                {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+                {"from": OrderStatus.PREPARANDO, "to": OrderStatus.ENVIADO, "reason": "Pedido en camino"},
+                {"from": OrderStatus.ENVIADO, "to": OrderStatus.ENTREGADO, "reason": "Entregado al cliente"},
+            ],
+        },
+        {
+            "days_ago": 60,
+            "status": OrderStatus.CANCELADO,
+            "payment_status": PaymentStatus.REEMBOLSADO,
+            "product_indices": [3, 5],  # Jugo, Lomito
+            "history": [
+                {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+                {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.CANCELADO, "reason": "Cancelado por el cliente"},
+            ],
+        },
+        {
+            "days_ago": 50,
+            "status": OrderStatus.ENTREGADO,
+            "payment_status": PaymentStatus.APROBADO,
+            "product_indices": [9, 10, 11],  # Flan, Helado, Torta
+            "history": [
+                {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+                {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+                {"from": OrderStatus.PREPARANDO, "to": OrderStatus.ENVIADO, "reason": "Pedido en camino"},
+                {"from": OrderStatus.ENVIADO, "to": OrderStatus.ENTREGADO, "reason": "Entregado al cliente"},
+            ],
+        },
+        {
+            "days_ago": 45,
+            "status": OrderStatus.ENTREGADO,
+            "payment_status": PaymentStatus.APROBADO,
+            "product_indices": [12, 13],  # Caesar, Griega
+            "history": [
+                {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+                {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+                {"from": OrderStatus.PREPARANDO, "to": OrderStatus.ENVIADO, "reason": "Pedido en camino"},
+                {"from": OrderStatus.ENVIADO, "to": OrderStatus.ENTREGADO, "reason": "Entregado al cliente"},
+            ],
+        },
+        {
+            "days_ago": 30,
+            "status": OrderStatus.CANCELADO,
+            "payment_status": PaymentStatus.REEMBOLSADO,
+            "product_indices": [1, 4],  # Agua, Papas Fritas
+            "history": [
+                {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+                {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.CANCELADO, "reason": "Cancelado por el cliente"},
+            ],
+        },
+        {
+            "days_ago": 20,
+            "status": OrderStatus.ENTREGADO,
+            "payment_status": PaymentStatus.APROBADO,
+            "product_indices": [8],  # Pizza Especial
+            "history": [
+                {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+                {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+                {"from": OrderStatus.PREPARANDO, "to": OrderStatus.ENVIADO, "reason": "Pedido en camino"},
+                {"from": OrderStatus.ENVIADO, "to": OrderStatus.ENTREGADO, "reason": "Entregado al cliente"},
+            ],
+        },
+        {
+            "days_ago": 10,
+            "status": OrderStatus.ENTREGADO,
+            "payment_status": PaymentStatus.APROBADO,
+            "product_indices": [14],  # Bowl
+            "history": [
+                {"from": OrderStatus.PENDIENTE, "to": OrderStatus.CONFIRMADO, "reason": "Pago aprobado"},
+                {"from": OrderStatus.CONFIRMADO, "to": OrderStatus.PREPARANDO, "reason": "Cocinero asignado"},
+                {"from": OrderStatus.PREPARANDO, "to": OrderStatus.ENVIADO, "reason": "Pedido en camino"},
+                {"from": OrderStatus.ENVIADO, "to": OrderStatus.ENTREGADO, "reason": "Entregado al cliente"},
+            ],
+        },
+    ]
+
+    for idx, order_config in enumerate(old_orders, start=1):
+        days_ago = order_config["days_ago"]
+        status = order_config["status"]
+        payment_status = order_config["payment_status"]
+        product_indices = order_config["product_indices"]
+        history_entries = order_config["history"]
+
+        created_at = now - timedelta(days=days_ago)
+        selected = [product_list[i] for i in product_indices]
+        total = sum(p.price for p in selected)
+
+        order = Order(
+            user_id=user.id,
+            address_id=address.id,
+            status=status,
+            total=total,
+            currency="ARS",
+            created_at=created_at,
+        )
+        session.add(order)
+        await session.flush()
+
+        for product in selected:
+            item = OrderItem(
+                order_id=order.id,
+                product_id=product.id,
+                quantity=1,
+                unit_price=product.price,
+                subtotal=product.price,
+            )
+            session.add(item)
+
+        payment = Payment(
+            order_id=order.id,
+            payment_method=PaymentMethod.MERCADOPAGO,
+            status=payment_status,
+            amount=total,
+            currency="ARS",
+        )
+        session.add(payment)
+
+        for entry in history_entries:
+            h = OrderHistory(
+                order_id=order.id,
+                from_status=entry["from"],
+                to_status=entry["to"],
+                reason=entry.get("reason"),
+                created_at=created_at + timedelta(days=1),
+            )
+            session.add(h)
+
+        print(f"  [OK] Old Order #{idx}: status={status.value}, days_ago={days_ago}, items={len(selected)}, total=${total:.2f}")
+
+
 async def main():
     """Run all seed functions in order."""
     print("=== Seeding database... ===")
@@ -481,6 +650,10 @@ async def main():
 
         print("\n  -- Orders --")
         await seed_orders(session, test_user, address, products)
+        await session.commit()
+
+        print("\n  -- Old Orders (for date filter testing) --")
+        await seed_old_orders(session, test_user, address, products)
         await session.commit()
 
     print("\n=== Seed completed successfully! ===")

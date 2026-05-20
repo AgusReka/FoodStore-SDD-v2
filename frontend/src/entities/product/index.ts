@@ -21,6 +21,7 @@ export interface Product {
   ingredientes: ProductIngredient[] | null
   createdAt: string
   updatedAt: string | null
+  deletedAt: string | null
 }
 
 export interface CreateProductDto {
@@ -67,6 +68,7 @@ export interface ProductRaw {
   ingredientes: ProductIngredientRaw[] | null
   created_at: string
   updated_at: string | null
+  deleted_at: string | null
 }
 
 export interface ProductIngredientRaw {
@@ -95,5 +97,6 @@ export function normalizeProduct(raw: ProductRaw): Product {
     })) ?? null,
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
+    deletedAt: raw.deleted_at,
   }
 }

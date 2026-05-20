@@ -19,14 +19,15 @@ async def list_ingredients(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     search: str | None = Query(None),
+    include_deleted: bool = Query(False),
 ):
     repo = IngredientRepository(db)
     service = IngredientService(repo)
     if search:
-        items = await service.search_ingredients(search, skip=(page - 1) * size, limit=size)
+        items = await service.search_ingredients(search, skip=(page - 1) * size, limit=size, include_deleted=include_deleted)
         total = len(items)
     else:
-        items, total = await service.paginate_ingredients(page=page, size=size)
+        items, total = await service.paginate_ingredients(page=page, size=size, include_deleted=include_deleted)
     return IngredientList(items=list(items), total=total, page=page, size=size)
 
 

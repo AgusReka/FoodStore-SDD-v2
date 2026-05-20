@@ -9,6 +9,7 @@ export interface Category {
   isActive: boolean
   createdAt: string
   updatedAt: string | null
+  deletedAt: string | null
 }
 
 export interface CreateCategoryDto {
@@ -33,6 +34,7 @@ export interface CategoryRaw {
   is_active: boolean
   created_at: string
   updated_at: string | null
+  deleted_at: string | null
 }
 
 /** Convert a raw API response to the camelCase frontend type. */
@@ -45,5 +47,6 @@ export function normalizeCategory(raw: CategoryRaw): Category {
     isActive: raw.is_active,
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
+    deletedAt: raw.deleted_at,
   }
 }

@@ -66,11 +66,11 @@ class ProductService(BaseService[Product]):
             ))
         await session.commit()
 
-    async def search_products(self, query: str, skip: int = 0, limit: int = 20) -> list[Product]:
-        return await self.repository.search_by_name(query, skip, limit)
+    async def search_products(self, query: str, skip: int = 0, limit: int = 20, include_deleted: bool = False) -> list[Product]:
+        return await self.repository.search_by_name(query, skip, limit, include_deleted)
 
-    async def filter_by_category(self, category_id: UUID, skip: int = 0, limit: int = 20) -> list[Product]:
-        return await self.repository.filter_by_categoria(category_id, skip, limit)
+    async def filter_by_category(self, category_id: UUID, skip: int = 0, limit: int = 20, include_deleted: bool = False) -> list[Product]:
+        return await self.repository.filter_by_categoria(category_id, skip, limit, include_deleted)
 
-    async def paginate_products(self, page: int = 1, size: int = 20) -> tuple[list[Product], int]:
-        return await self.repository.paginate(page=page, size=size)
+    async def paginate_products(self, page: int = 1, size: int = 20, include_deleted: bool = False) -> tuple[list[Product], int]:
+        return await self.repository.paginate(page=page, size=size, include_deleted=include_deleted)

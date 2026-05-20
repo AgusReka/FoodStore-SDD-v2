@@ -12,6 +12,7 @@ export interface Ingredient {
   imageUrl: string | null
   createdAt: string
   updatedAt: string | null
+  deletedAt: string | null
 }
 
 export interface CreateIngredientDto {
@@ -44,6 +45,7 @@ export interface IngredientRaw {
   image_url: string | null
   created_at: string
   updated_at: string | null
+  deleted_at: string | null
 }
 
 /** Convert a raw API response to the camelCase frontend type. */
@@ -59,5 +61,6 @@ export function normalizeIngredient(raw: IngredientRaw): Ingredient {
     imageUrl: raw.image_url,
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
+    deletedAt: raw.deleted_at,
   }
 }

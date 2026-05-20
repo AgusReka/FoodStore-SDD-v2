@@ -34,13 +34,13 @@ class IngredientService(BaseService[Ingredient]):
         ingredient = await self.repository.get(ingredient_id)
         if not ingredient:
             raise NotFoundError(f"Ingredient {ingredient_id} not found")
-        has_products = await self.repository.has_products(ingredient_id)
-        if has_products:
-            raise ConflictError("Cannot delete ingredient with associated products")
+        has_active = await self.repository.has_active_products(ingredient_id)
+        if has_active:
+            raise ConflictError("Cannot delete ingredient used in active products")
         return await self.repository.delete(ingredient_id)
 
-    async def search_ingredients(self, query: str, skip: int = 0, limit: int = 20) -> list[Ingredient]:
-        return await self.repository.search_by_name(query, skip, limit)
+    async def search_ingredients(self, query: str, skip: int = 0, limit: int = 20, include_deleted: bool = False) -> list[Ingredient]:
+        return await self.repository.search_by_name(query, skip, limit, include_deleted)
 
-    async def paginate_ingredients(self, page: int = 1, size: int = 20) -> tuple[list[Ingredient], int]:
-        return await self.repository.paginate(page=page, size=size)
+    async def paginate_ingredients(self, page: int = 1, size: int = 20, include_deleted: bool = False) -> tuple[list[Ingredient], int]:
+        return await self.repository.paginate(page=page, size=size, include_deleted=include_deleted)
