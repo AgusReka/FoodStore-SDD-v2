@@ -1,8 +1,10 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@shared/hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { get } from '@shared/api/client'
 import { ENDPOINTS } from '@shared/api/endpoints'
+import { useAdminOrdersWS } from '@features/admin/orders/hooks/useAdminOrdersWS'
+import { NewOrderAlert } from '@features/admin/orders/components/NewOrderAlert'
 
 interface StockAlertList {
   total: number
@@ -46,6 +48,15 @@ const AdminPage = () => {
 
   const alertCount = alertData?.total ?? 0
   const pendingOrdersCount = pendingOrdersData?.total ?? 0
+
+  const queryClient = useQueryClient()
+
+  // WebSocket: refresh pending badge + show alert on new orders
+  const { newOrder, dismissNewOrder } = useAdminOrdersWS(() => {
+    queryClient.invalidateQueries({ queryKey: ['pending-orders-count'] })
+    queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] })
+    queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+  })
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -101,6 +112,15 @@ const AdminPage = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* New Order Alert — shown on all admin pages */}
+      {newOrder && (
+        <NewOrderAlert
+          orderId={newOrder.orderId}
+          numero={newOrder.numero}
+          onDismiss={dismissNewOrder}
+        />
+      )}
     </div>
   )
 }

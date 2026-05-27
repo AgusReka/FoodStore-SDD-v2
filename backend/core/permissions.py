@@ -40,6 +40,9 @@ class Permission(str, enum.Enum):
     PAYMENT_CREATE = "payment:create"
     PAYMENT_UPDATE_STATUS = "payment:update_status"
 
+    KITCHEN_VIEW = "kitchen:view"
+    KITCHEN_UPDATE_STATUS = "kitchen:update_status"
+
 
 ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
     UserRole.ADMIN: {
@@ -71,6 +74,23 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         Permission.INGREDIENT_CREATE,
         Permission.INGREDIENT_UPDATE,
         Permission.INGREDIENT_DELETE,
+        Permission.KITCHEN_VIEW,
+        Permission.KITCHEN_UPDATE_STATUS,
+    },
+    UserRole.COCINA: {
+        Permission.KITCHEN_VIEW,
+        Permission.KITCHEN_UPDATE_STATUS,
+        Permission.PRODUCT_LIST,
+        Permission.PRODUCT_READ,
+        Permission.INGREDIENT_LIST,
+        Permission.INGREDIENT_READ,
+    },
+    UserRole.PEDIDOS: {
+        Permission.ORDER_LIST_ALL,
+        Permission.ORDER_READ_ANY,
+        Permission.ORDER_UPDATE_STATUS,
+        Permission.KITCHEN_VIEW,
+        Permission.KITCHEN_UPDATE_STATUS,
     },
     UserRole.CLIENTE: set(),
 }

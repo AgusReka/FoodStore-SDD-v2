@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrderDetail, useOrderHistory } from '@features/orders/hooks/useOrders'
+import { useOrderWS } from '@features/orders/hooks/useOrderWS'
 import { queryKeys } from '@shared/api/queryKeys'
 import { OrderTimeline } from '@features/orders/OrderTimeline'
 import { PaymentStatus } from '@features/orders/PaymentStatus'
@@ -112,43 +113,12 @@ const OrderDetailPage = () => {
   const queryClient = useQueryClient()
 
   const [isPolling, setIsPolling] = useState(false)
-  const pollAttempts = useRef(0)
-  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Poll for pending MP payments after returning from MP redirect
-  useEffect(() => {
-    if (!order?.payment) return
-    if (order.payment.payment_method !== 'mercadopago') return
-    if (order.payment.status !== 'pendiente') return
-
+  // Reconnect WebSocket for real-time order status updates
+  useOrderWS(id, () => {
     setIsPolling(true)
-    pollAttempts.current = 0
-
-    pollTimer.current = setInterval(async () => {
-      pollAttempts.current++
-
-      if (pollAttempts.current >= 10) {
-        if (pollTimer.current) clearInterval(pollTimer.current)
-        setIsPolling(false)
-        return
-      }
-
-      const result = await refetch()
-      const newStatus = result.data?.payment?.status
-      if (newStatus && newStatus !== 'pendiente') {
-        if (pollTimer.current) clearInterval(pollTimer.current)
-        setIsPolling(false)
-      }
-    }, 3000)
-
-    return () => {
-      if (pollTimer.current) {
-        clearInterval(pollTimer.current)
-        pollTimer.current = null
-      }
-      setIsPolling(false)
-    }
-  }, [order?.id, order?.payment?.status, order?.payment?.payment_method, refetch])
+    refetch().finally(() => setIsPolling(false))
+  })
 
   // Invalidate orders list cache so "Volver a mis pedidos" shows fresh data
   useEffect(() => {
@@ -335,7 +305,7 @@ const OrderDetailPage = () => {
                 margin: '2px 0 0',
               }}
             >
-              Tu pedido #{order.id.slice(-8).toUpperCase()} fue registrado con
+              Tu pedido #{(order.numero ?? order.id.slice(-8).toUpperCase())} fue registrado con
               éxito. El pago quedó pendiente — cuando el local confirme tu pedido
               te avisaremos.
             </p>
@@ -402,7 +372,7 @@ const OrderDetailPage = () => {
                 margin: '2px 0 0',
               }}
             >
-              Tu pedido #{order.id.slice(-8).toUpperCase()} fue registrado con
+              Tu pedido #{(order.numero ?? order.id.slice(-8).toUpperCase())} fue registrado con
               éxito.
             </p>
           </div>
@@ -524,7 +494,7 @@ const OrderDetailPage = () => {
                 >
                   Pedido{' '}
                   <span style={{ fontFamily: 'var(--ff-mono)', fontWeight: 500 }}>
-                    #{order.id.slice(-8).toUpperCase()}
+                    #{(order.numero ?? order.id.slice(-8).toUpperCase())}
                   </span>
                 </h1>
                 <p
@@ -666,8 +636,7 @@ const OrderDetailPage = () => {
                         margin: 0,
                       }}
                     >
-                      Producto #
-                      {item.product_id.slice(-6).toUpperCase()}
+                      {item.product_name}
                     </p>
                     <p
                       style={{

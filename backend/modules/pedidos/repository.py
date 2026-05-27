@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from backend.core.enums import OrderStatus
 from backend.core.repository import BaseRepository
-from backend.modules.pedidos.model import Order, OrderHistory
+from backend.modules.pedidos.model import Order, OrderHistory, OrderItem
 
 
 class PedidoRepository(BaseRepository[Order]):
@@ -15,7 +15,11 @@ class PedidoRepository(BaseRepository[Order]):
         super().__init__(Order, session)
 
     async def get_by_user(self, user_id: UUID, skip: int = 0, limit: int = 20, status: OrderStatus | None = None, desde: datetime | None = None) -> list[Order]:
-        stmt = select(Order).where(Order.user_id == user_id)
+        stmt = (
+            select(Order)
+            .where(Order.user_id == user_id)
+            .options(selectinload(Order.items).selectinload(OrderItem.product))
+        )
         if status:
             stmt = stmt.where(Order.status == status)
         if desde:
@@ -34,7 +38,12 @@ class PedidoRepository(BaseRepository[Order]):
         return result.scalar() or 0
 
     async def get_by_status(self, estado: OrderStatus, skip: int = 0, limit: int = 20) -> list[Order]:
-        stmt = select(Order).where(Order.status == estado).offset(skip).limit(limit)
+        stmt = (
+            select(Order)
+            .where(Order.status == estado)
+            .options(selectinload(Order.items).selectinload(OrderItem.product))
+            .offset(skip).limit(limit)
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -42,7 +51,10 @@ class PedidoRepository(BaseRepository[Order]):
         stmt = (
             select(Order)
             .where(Order.id == order_id)
-            .options(selectinload(Order.items), selectinload(Order.payment))
+            .options(
+                selectinload(Order.items).selectinload(OrderItem.product),
+                selectinload(Order.payment),
+            )
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
@@ -51,7 +63,10 @@ class PedidoRepository(BaseRepository[Order]):
         stmt = (
             select(Order)
             .where(Order.id == order_id)
-            .options(selectinload(Order.items), selectinload(Order.payment))
+            .options(
+                selectinload(Order.items).selectinload(OrderItem.product),
+                selectinload(Order.payment),
+            )
             .with_for_update()
         )
         result = await self.session.execute(stmt)

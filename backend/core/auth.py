@@ -52,17 +52,22 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> dic
         raise credentials_exception
 
 
-def require_role(required_role: UserRole):
-    """FastAPI dependency factory: require a minimum role (admin bypasses)."""
+def require_role(*roles: UserRole):
+    """FastAPI dependency factory: require one of the given roles (admin bypasses).
+
+    Usage: Depends(require_role(UserRole.COCINA, UserRole.ADMIN))
+    """
     async def checker(
         current_user: Annotated[dict, Depends(get_current_user)],
     ) -> dict:
         user_role = current_user.get("role")
-        if user_role != required_role.value:
-            if user_role != UserRole.ADMIN.value:
-                raise ForbiddenError(
-                    f"Role '{required_role.value}' required"
-                )
+        if user_role == UserRole.ADMIN.value:
+            return current_user
+        allowed = {r.value for r in roles}
+        if user_role not in allowed:
+            raise ForbiddenError(
+                f"One of {[r.value for r in roles]} required"
+            )
         return current_user
     return checker
 

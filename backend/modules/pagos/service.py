@@ -34,11 +34,18 @@ class PagoService(BaseService[Payment]):
         if existing:
             raise ConflictError(f"Order {order_id} already has a payment")
 
-        return await self.repository.create(
+        payment = await self.repository.create(
             order_id=order_id,
             payment_method=metodo,
             amount=monto,
         )
+
+        # Auto-confirm orders for non-MP payment methods.
+        # MP payments are confirmed asynchronously via mp-return/webhook.
+        if metodo in (PaymentMethod.EFECTIVO, PaymentMethod.TRANSFERENCIA):
+            await self._advance_order_to_confirmed(order_id)
+
+        return payment
 
     async def update_status(self, payment_id: UUID, new_status: PaymentStatus) -> Payment:
         payment = await self.repository.get(payment_id)

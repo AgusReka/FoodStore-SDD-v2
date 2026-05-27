@@ -7,6 +7,7 @@ import type { PaginatedResponse } from '@shared/api/client'
 export interface OrderItemRead {
   id: string
   product_id: string
+  product_name: string
   quantity: number
   unit_price: number
   subtotal: number
@@ -37,6 +38,7 @@ export interface OrderHistoryEntry {
 
 export interface OrderRead {
   id: string
+  numero: number | null
   user_id: string
   address_id: string | null
   status: string

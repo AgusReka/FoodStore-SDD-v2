@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAdminOrderDetail, useAdminOrderHistory, useUpdateOrderStatus } from './hooks/useAdminOrders'
+import { useOrderWS } from '@features/orders/hooks/useOrderWS'
 import { OrderDetailInfo } from './components/OrderDetailInfo'
 import { OrderAdminTimeline } from './components/OrderAdminTimeline'
 import { OrderStatusModal } from './components/OrderStatusModal'
@@ -13,6 +14,9 @@ export function AdminOrderDetailPage() {
   // Queries
   const { data: order, isLoading: orderLoading, isError: orderError, refetch: refetchOrder } = useAdminOrderDetail(id)
   const { data: history, isLoading: historyLoading } = useAdminOrderHistory(id)
+
+  // Real-time updates via WebSocket
+  useOrderWS(id, () => { refetchOrder() })
 
   // Status modal
   const [statusModalOpen, setStatusModalOpen] = useState(false)

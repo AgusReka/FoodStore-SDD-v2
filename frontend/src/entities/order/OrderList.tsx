@@ -3,6 +3,7 @@ import { OrderCard } from './OrderCard'
 interface OrderListProps {
   orders: {
     id: string
+    numero: number | null
     status: string
     total: number
     currency: string

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 interface OrderCardProps {
   order: {
     id: string
+    numero: number | null
     status: string
     total: number
     currency: string
@@ -31,7 +32,7 @@ const STATUS_STYLES: Record<string, string> = {
 
 export function OrderCard({ order }: OrderCardProps) {
   const navigate = useNavigate()
-  const shortId = order.id.slice(-8).toUpperCase()
+  const displayId = order.numero ?? order.id.slice(-8).toUpperCase()
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
   const date = new Date(order.created_at).toLocaleDateString('es-AR', {
@@ -50,7 +51,7 @@ export function OrderCard({ order }: OrderCardProps) {
     >
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-sm text-gray-500">Pedido #{shortId}</p>
+          <p className="text-sm text-gray-500">Pedido #{displayId}</p>
           <p className="text-xs text-gray-400">{date}</p>
         </div>
         <span

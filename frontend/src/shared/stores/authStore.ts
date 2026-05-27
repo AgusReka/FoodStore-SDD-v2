@@ -14,7 +14,7 @@ interface UserRead {
   avatar_url?: string | null
   is_active: boolean
   is_verified: boolean
-  role: 'admin' | 'cliente'
+  role: 'admin' | 'cliente' | 'cocina' | 'pedidos'
   created_at: string
   updated_at?: string | null
 }

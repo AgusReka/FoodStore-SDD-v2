@@ -37,6 +37,7 @@ class OrderItemRead(BaseModel):
 
     id: UUID
     product_id: UUID
+    product_name: str
     quantity: int
     unit_price: float
     subtotal: float
@@ -46,6 +47,7 @@ class PedidoRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    numero: int | None = None
     user_id: UUID
     address_id: UUID | None = None
     status: OrderStatus

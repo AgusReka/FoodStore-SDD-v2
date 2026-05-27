@@ -84,6 +84,50 @@ async def seed_users(session):
     return user
 
 
+async def seed_cocina(session):
+    """Create test kitchen user."""
+    user, created = await get_or_create(
+        session,
+        User,
+        email="cocina@foodstore.com",
+        defaults={
+            "username": "cocina1",
+            "hashed_password": hash_password("cocina123"),
+            "first_name": "Cocinero",
+            "last_name": "FoodStore",
+            "role": UserRole.COCINA,
+            "is_verified": True,
+        },
+    )
+    if created:
+        print(f"  [OK] Kitchen user created: {user.email}")
+    else:
+        print(f"  [  ] Kitchen user already exists: {user.email}")
+    return user
+
+
+async def seed_pedidos(session):
+    """Create test orders manager user."""
+    user, created = await get_or_create(
+        session,
+        User,
+        email="pedidos@foodstore.com",
+        defaults={
+            "username": "pedidos1",
+            "hashed_password": hash_password("pedidos123"),
+            "first_name": "Gestor",
+            "last_name": "Pedidos",
+            "role": UserRole.PEDIDOS,
+            "is_verified": True,
+        },
+    )
+    if created:
+        print(f"  [OK] Pedidos user created: {user.email}")
+    else:
+        print(f"  [  ] Pedidos user already exists: {user.email}")
+    return user
+
+
 async def seed_categories(session):
     """Create product categories."""
     categories_data = [
@@ -626,6 +670,11 @@ async def main():
 
         print("\n  -- Test Users --")
         test_user = await seed_users(session)
+        await session.commit()
+
+        print("\n  -- Kitchen and Pedidos Users --")
+        await seed_cocina(session)
+        await seed_pedidos(session)
         await session.commit()
 
         print("\n  -- Categories --")

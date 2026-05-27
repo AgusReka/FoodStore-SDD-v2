@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@shared/stores/authStore'
 
 interface ProtectedRouteProps {
-  requiredRole?: string
+  requiredRole?: string | string[]
 }
 
 const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
@@ -37,8 +37,11 @@ const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
   }
 
   // Has token but wrong role → redirect home
-  if (requiredRole && user?.role !== requiredRole) {
-     return <Navigate to="/" replace />
+  if (requiredRole) {
+    const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole]
+    if (!user?.role || !allowedRoles.includes(user.role)) {
+      return <Navigate to="/" replace />
+    }
   }
 
   return <Outlet />

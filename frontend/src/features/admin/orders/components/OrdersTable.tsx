@@ -84,7 +84,7 @@ export function OrdersTable({
                 onClick={() => navigate(`/admin/orders/${order.id}`)}
               >
                 <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                  {order.id.slice(0, 8)}…
+                  #{order.numero ?? order.id.slice(0, 8)}
                 </td>
                 <td className="px-4 py-3">
                   <button

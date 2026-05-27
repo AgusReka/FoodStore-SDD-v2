@@ -27,6 +27,7 @@ import backend.modules.direcciones
 import backend.modules.ingredientes
 import backend.modules.admin
 import backend.modules.checkout
+import backend.modules.cocina
 from backend.core.error_handler import global_exception_handler
 from backend.core.logging import get_logger
 from backend.core.middleware import RequestIDMiddleware
@@ -103,6 +104,7 @@ app.include_router(backend.modules.direcciones.router, prefix="/api/v1/direccion
 app.include_router(backend.modules.ingredientes.router, prefix="/api/v1/ingredientes")
 app.include_router(backend.modules.admin.router, prefix="/api/v1/admin")
 app.include_router(backend.modules.checkout.router, prefix="/api/v1/checkout")
+app.include_router(backend.modules.cocina.router, prefix="/api/v1/cocina")
 
 
 @app.get("/")

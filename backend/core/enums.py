@@ -5,6 +5,8 @@ import enum
 class UserRole(str, enum.Enum):
     ADMIN = "admin"
     CLIENTE = "cliente"
+    COCINA = "cocina"
+    PEDIDOS = "pedidos"
 
 
 class OrderStatus(str, enum.Enum):

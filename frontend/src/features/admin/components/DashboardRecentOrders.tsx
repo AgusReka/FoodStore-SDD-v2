@@ -9,6 +9,7 @@ import type { PaginatedResponse } from '@shared/api/client'
 
 interface OrderRead {
   id: string
+  numero: number | null
   status: string
   total: number
   created_at: string
@@ -85,7 +86,7 @@ export function DashboardRecentOrders() {
                   className="cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <td className="py-2.5 pr-4 font-mono text-xs text-gray-500">
-                    {order.id.slice(0, 8)}…
+                    #{order.numero ?? order.id.slice(0, 8)}
                   </td>
                   <td className="py-2.5 pr-4">
                     <span

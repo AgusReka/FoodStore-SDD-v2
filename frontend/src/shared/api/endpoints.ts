@@ -75,6 +75,11 @@ export const ENDPOINTS = {
   ADMIN_ORDERS_LIST: `${ADMIN}/pedidos`,
   ADMIN_STOCK_ALERTS: `${ADMIN}/stock-alerts`,
 
+  // Cocina (Kitchen Display System)
+  COCINA_PEDIDOS: `/cocina/pedidos`,
+  COCINA_PEDIDOS_ESTADO: (id: string) => `/cocina/pedidos/${id}/estado`,
+  COCINA_EVENTS: `/cocina/events`,
+
   // Health
   HEALTH_CHECK: `${HEALTH}`,
   HEALTH_READY: `${HEALTH}/ready`,

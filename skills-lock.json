@@ -1,10 +1,16 @@
 {
   "version": 1,
   "skills": {
-    "fastapi-python": {
-      "source": "local",
+    "dashboard-crud-page": {
+      "source": "E:\\Facultad German\\FoodStore-SDD-v2\\.agents\\skills\\dashboard-crud-page",
       "sourceType": "local",
-      "computedHash": "29c6ca5e2bbfb51d40f0fb0afd998b13e23234e1f88c790b6e6a435c7eac55de"
+      "computedHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fastapi-python": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "fastapi-python/SKILL.md",
+      "computedHash": "4521c6090735152b7b8df670cefe5c1c6d1dcaa115de67bb96e74ebf802d4f24"
     },
     "find-skills": {
       "source": "vercel-labs/skills",
@@ -29,34 +35,51 @@
       "computedHash": "a5f4e0424f6a34e69f60158076bf085315c164358da85a72d338c6b9571ea5d1"
     },
     "jwt-security": {
-      "source": "local",
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "jwt-security/SKILL.md",
+      "computedHash": "88b3f7d03223cf20e24598d231e667b13ba6bf9040fd490feafcd226356a9db1"
+    },
+    "mercadopago-integration": {
+      "source": "E:\\Facultad German\\FoodStore-SDD-v2\\.agents\\skills\\mercadopago-integration",
       "sourceType": "local",
-      "computedHash": "90222fc948f988ac696e0a2ef365822e7bd17ccbfd141ec77189933bdbbefa2f"
+      "computedHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "postgresql-database-engineering": {
-      "source": "local",
-      "sourceType": "local",
-      "computedHash": "1679dbc9daeada77006d061832dd8957a4597dc4a43766f605e15ab8f94b4d3d"
+      "source": "manutej/luxor-claude-marketplace",
+      "sourceType": "github",
+      "skillPath": "plugins/luxor-database-pro/skills/postgresql-database-engineering/SKILL.md",
+      "computedHash": "6039063ea5257f77ff0797f08074d3ec40da34ca8f412d8af5b194b9b6db0e89"
     },
     "react-dev": {
-      "source": "local",
-      "sourceType": "local",
-      "computedHash": "6906012fe308a0ed1976761d7d80c9604eb0f0273ccdcfcbe66096d91d00f52e"
+      "source": "softaworks/agent-toolkit",
+      "sourceType": "github",
+      "skillPath": "skills/react-dev/SKILL.md",
+      "computedHash": "da3caa5f2bfd7274fad3f08524ff3ad4f427978773c3e77e7b14e44aaac31d78"
     },
     "skill-creator": {
-      "source": "local",
-      "sourceType": "local",
-      "computedHash": "5014eff166fc16d9c827a08b23b0cd872f39b698f69de32ffce39cf93a3398af"
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "7e3c9cd74e9e2b4828527a857170e86310f2dab5ea8030a9043df2c7e6c88857"
+    },
+    "tailwind-design-system": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/frontend-mobile-development/skills/tailwind-design-system/SKILL.md",
+      "computedHash": "f54f39ce967af3a4bba1f662c3600f0253467508d5fbbc7c545c67e102da2253"
     },
     "tailwindcss": {
-      "source": "local",
-      "sourceType": "local",
-      "computedHash": "01a9f60585dbe67a65a53b5493a8de5b23f06c1e35ec17cc458b9ac2ce779db4"
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "tailwindcss/SKILL.md",
+      "computedHash": "1715717d38abba1c4b11f2e95a94681cdb1dddbcb28379637b591a16b50bcd4d"
     },
     "zustand-state-management": {
-      "source": "local",
-      "sourceType": "local",
-      "computedHash": "8a644c0d3ab4650c7011deb2b2cc3323ae4bd62d1f2d281b4e206bf36f9d90c7"
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "zustand-state-management/SKILL.md",
+      "computedHash": "08b88583afa2e859abf053ffe958f93800b7426ca285d3887b94d5e613cc29d1"
     }
   }
 }

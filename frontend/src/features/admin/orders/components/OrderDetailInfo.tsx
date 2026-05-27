@@ -39,7 +39,7 @@ export function OrderDetailInfo({ order, isLoading, onStatusClick }: OrderDetail
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Pedido #{order.id.slice(0, 8)}
+            Pedido #{order.numero ?? order.id.slice(0, 8)}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Creado el {new Date(order.created_at).toLocaleDateString('es-AR', {
@@ -157,7 +157,7 @@ export function OrderDetailInfo({ order, isLoading, onStatusClick }: OrderDetail
               {order.items.map((item) => (
                 <tr key={item.id}>
                   <td className="py-3 text-gray-900 font-medium">
-                    {item.product_id.slice(0, 8)}…
+                    {item.product_name}
                   </td>
                   <td className="py-3 text-right text-gray-700">{item.quantity}</td>
                   <td className="py-3 text-right text-gray-700">{formatCurrency(item.unit_price)}</td>

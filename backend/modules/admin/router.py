@@ -1,22 +1,27 @@
+import logging
 from datetime import datetime
 from uuid import UUID
 from typing import Annotated
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.auth import require_permission
 from backend.core.database import get_db
-from backend.core.enums import OrderStatus
+from backend.core.enums import OrderStatus, UserRole
 from backend.core.exceptions import NotFoundError
 from backend.core.permissions import Permission
+from backend.core.security import decode_access_token
 from backend.modules.admin.schemas import StockAlertItem, StockAlertList, UserRoleUpdate
 from backend.modules.admin.service import AdminService
 from backend.modules.ingredientes.model import Ingredient, ProductIngredient
+from backend.modules.pedidos.connection_manager import admin_manager
 from backend.modules.productos.model import Product
 from backend.modules.productos.repository import ProductRepository
 from backend.modules.usuarios.repository import UserRepository
 from backend.modules.usuarios.schemas import UserRead, UserList
 from backend.modules.pedidos.repository import PedidoRepository
 from backend.modules.pedidos.schemas import PedidoList
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Admin"])
 
@@ -108,3 +113,47 @@ async def list_all_orders(
     service = AdminService(user_repo, pedido_repo)
     items, total = await service.list_all_orders(page=page, size=size, estado=estado, desde=desde, hasta=hasta)
     return PedidoList(items=list(items), total=total, page=page, size=size)
+
+
+@router.websocket("/pedidos/events")
+async def admin_orders_ws(websocket: WebSocket, token: str = Query(...)):
+    """WebSocket endpoint for real-time admin order updates.
+
+    The admin connects with a JWT ``token`` query param and receives
+    JSON events as text frames:
+    - ORDER_STATUS_CHANGED: any order's status changed
+    - NUEVO_PEDIDO: a new order was created
+
+    Requires admin role.
+    """
+    # Validate JWT manually
+    payload = decode_access_token(token)
+    if payload is None or "sub" not in payload:
+        await websocket.close(code=4001)
+        return
+
+    # Validate admin role
+    role_str = payload.get("role")
+    try:
+        user_role = UserRole(role_str) if role_str else UserRole.CLIENTE
+    except ValueError:
+        await websocket.close(code=4003)
+        return
+
+    if user_role != UserRole.ADMIN:
+        await websocket.close(code=4003)
+        return
+
+    await websocket.accept()
+    await admin_manager.connect(websocket)
+
+    try:
+        while True:
+            # Read and discard client messages to detect disconnection
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        logger.exception("Unexpected WebSocket error on admin events")
+    finally:
+        await admin_manager.disconnect(websocket)

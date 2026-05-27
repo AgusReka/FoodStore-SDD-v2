@@ -14,6 +14,7 @@ class Order(Base):
     __tablename__ = "pedidos"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    numero: Mapped[int | None] = mapped_column("numero", Integer, nullable=True, default=None)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
     address_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("direcciones.id", ondelete="SET NULL"), nullable=True)
     status: Mapped[OrderStatus] = mapped_column("estado", Enum(OrderStatus), default=OrderStatus.PENDIENTE, nullable=False)

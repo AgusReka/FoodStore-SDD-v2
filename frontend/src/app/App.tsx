@@ -16,6 +16,7 @@ import VerifyEmailPage from '@pages/VerifyEmailPage'
 import PaymentReturnPage from '@pages/PaymentReturnPage'
 import AdminPage from '@pages/AdminPage'
 import AdminDashboard from '@pages/AdminDashboard'
+import CocinaPage from '@pages/CocinaPage'
 import NotFound from '@pages/NotFound'
 import { CategoryListPage } from '@features/admin/categories'
 import { IngredientListPage } from '@features/admin/ingredients'
@@ -61,6 +62,11 @@ const App = () => {
           <Route path="orders/:id" element={<AdminOrderDetailPage />} />
           <Route path="stock-alerts" element={<StockAlertsPage />} />
         </Route>
+      </Route>
+
+      {/* Cocina (KDS) route — standalone, no customer header */}
+      <Route element={<ProtectedRoute requiredRole={['cocina', 'pedidos', 'admin']} />}>
+        <Route path="/cocina" element={<CocinaPage />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
